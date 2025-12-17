@@ -107,7 +107,6 @@ const Dashboard: React.FC = () => {
             frequency,
             startDate: finalDate
         });
-        alert('تم إضافة العملية المتكررة بنجاح');
     } else {
         addTransaction({
             amount: parseFloat(amount),
@@ -166,35 +165,36 @@ const Dashboard: React.FC = () => {
         </button>
       </div>
 
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-dark-900 to-dark-800 dark:from-primary-900 dark:to-dark-900 p-8 shadow-2xl shadow-gray-200 dark:shadow-black/50 text-white transform transition-transform hover:scale-[1.01] duration-300">
+      {/* بطاقة الرصيد الرئيسية - تم تحسين الألوان هنا */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0f172a] to-[#1e293b] dark:from-[#064e3b] dark:to-[#022c22] p-8 shadow-2xl shadow-gray-200 dark:shadow-black/50 text-white transform transition-transform hover:scale-[1.01] duration-300">
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-primary-500/20 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3"></div>
           
           <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
               <div>
-                  <p className="text-gray-400 font-medium mb-1 text-sm uppercase tracking-wider">الرصيد الحالي</p>
+                  <p className="text-gray-300 font-medium mb-1 text-sm uppercase tracking-wider opacity-80">الرصيد الحالي</p>
                   <h3 className="text-4xl md:text-5xl font-black tracking-tight text-white mb-2">
                       {formatCurrency(balance, settings.currency)}
                   </h3>
-                  <div className="flex items-center gap-2 text-sm text-primary-300 bg-white/5 px-3 py-1 rounded-full w-fit backdrop-blur-sm border border-white/5">
+                  <div className="flex items-center gap-2 text-sm text-emerald-300 bg-white/10 px-3 py-1 rounded-full w-fit backdrop-blur-sm border border-white/10">
                       <TrendingUp size={14} />
-                      <span>{savingsRate.toFixed(1)}% معدل الادخار</span>
+                      <span className="font-bold">{savingsRate.toFixed(1)}% معدل الادخار</span>
                   </div>
               </div>
               <div className="flex gap-4 w-full md:w-auto">
                   <div className="flex-1 bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10">
-                      <div className="flex items-center gap-2 text-emerald-300 mb-1">
+                      <div className="flex items-center gap-2 text-emerald-400 mb-1">
                           <div className="p-1 rounded-full bg-emerald-500/20"><ArrowDownLeft size={12} /></div>
-                          <span className="text-xs font-bold">الدخل</span>
+                          <span className="text-xs font-bold uppercase">الدخل</span>
                       </div>
-                      <p className="text-lg font-bold">{formatCurrency(totalIncome, settings.currency)}</p>
+                      <p className="text-lg font-black text-white">{formatCurrency(totalIncome, settings.currency)}</p>
                   </div>
                   <div className="flex-1 bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10">
-                      <div className="flex items-center gap-2 text-rose-300 mb-1">
+                      <div className="flex items-center gap-2 text-rose-400 mb-1">
                           <div className="p-1 rounded-full bg-rose-500/20"><ArrowUpRight size={12} /></div>
-                          <span className="text-xs font-bold">المصروف</span>
+                          <span className="text-xs font-bold uppercase">المصروف</span>
                       </div>
-                      <p className="text-lg font-bold">{formatCurrency(totalExpense, settings.currency)}</p>
+                      <p className="text-lg font-black text-white">{formatCurrency(totalExpense, settings.currency)}</p>
                   </div>
               </div>
           </div>
@@ -203,7 +203,7 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
             {categoryExpenses.length > 0 && (
-                <div className="bg-white dark:bg-dark-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
                            <PieChartIcon size={20} className="text-primary-500" />
@@ -235,7 +235,7 @@ const Dashboard: React.FC = () => {
                         </div>
                         <div className="w-full sm:w-1/2 grid grid-cols-1 gap-2 max-h-64 overflow-y-auto custom-scrollbar pr-2">
                              {categoryExpenses.map((cat, i) => (
-                                 <div key={i} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-dark-800/50">
+                                 <div key={i} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                      <div className="flex items-center gap-2">
                                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }}></div>
                                          <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{cat.name}</span>
@@ -248,7 +248,7 @@ const Dashboard: React.FC = () => {
                 </div>
             )}
 
-            <div className="bg-white dark:bg-dark-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="font-bold text-lg text-gray-900 dark:text-white">تحليل التدفقات</h3>
                 </div>
@@ -294,10 +294,9 @@ const Dashboard: React.FC = () => {
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-dark-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="font-bold text-lg text-gray-900 dark:text-white">أحدث العمليات</h3>
-                    <button className="text-primary-600 dark:text-primary-500 text-xs font-bold hover:underline">عرض الكل</button>
                 </div>
                 
                 <div className="space-y-4">
@@ -310,7 +309,7 @@ const Dashboard: React.FC = () => {
                     filteredTransactions.slice(0, 5).map(t => {
                         const IconComponent = getCategoryIcon(t.category);
                         return (
-                        <div key={t.id} className="flex items-center justify-between p-4 rounded-2xl bg-gray-50/50 hover:bg-gray-100 dark:bg-dark-800/50 dark:hover:bg-dark-800 transition-all group">
+                        <div key={t.id} className="flex items-center justify-between p-4 rounded-2xl bg-gray-50/50 hover:bg-gray-100 dark:bg-gray-700/50 dark:hover:bg-gray-700 transition-all group">
                             <div className="flex items-center gap-4">
                                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm relative ${
                                 t.type === 'income' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600' : 'bg-rose-100 dark:bg-rose-900/30 text-rose-600'
@@ -347,7 +346,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         <div className="space-y-6">
-            <div className="bg-white dark:bg-dark-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-sm">
                         <AlertCircle size={16} className="text-amber-500" />
@@ -362,7 +361,7 @@ const Dashboard: React.FC = () => {
                                 {formatCurrency(monthlyExpenses, settings.currency)}
                             </span>
                          </div>
-                         <div className="w-full bg-gray-100 dark:bg-dark-800 rounded-full h-3 overflow-hidden mb-3">
+                         <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-3 overflow-hidden mb-3">
                             <div 
                                 className={`h-full rounded-full transition-all duration-1000 ${monthlyExpenses > budget.monthlyIncome ? 'bg-red-500' : 'bg-primary-500'}`}
                                 style={{ width: `${Math.min(budgetProgress, 100)}%` }}
@@ -371,7 +370,7 @@ const Dashboard: React.FC = () => {
                          <p className="text-[10px] text-gray-400 text-left">من أصل {formatCurrency(budget.monthlyIncome, settings.currency)}</p>
                     </div>
                 ) : (
-                    <div className="text-center py-4 bg-gray-50 dark:bg-dark-800/50 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
+                    <div className="text-center py-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
                         <p className="text-xs text-gray-400">لم يتم تحديد ميزانية</p>
                     </div>
                 )}
@@ -382,7 +381,7 @@ const Dashboard: React.FC = () => {
       <Modal isOpen={isAddModalOpen} onClose={() => { setIsAddModalOpen(false); resetForm(); }} title=" ">
         <div className="relative -mt-6">
              <div className="flex justify-center mb-6">
-                 <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-2xl flex w-full max-w-sm relative shadow-inner">
+                 <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-2xl flex w-full max-sm relative shadow-inner">
                      <button
                         type="button"
                         onClick={() => setType('income')}
@@ -451,7 +450,7 @@ const Dashboard: React.FC = () => {
                  </div>
 
                  <div className="flex gap-3">
-                     <div className="flex-1 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-2xl border border-gray-100 dark:border-gray-700 flex items-center gap-3">
+                     <div className="flex-1 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-2xl border border-gray-100 dark:border-gray-700 flex items-center gap-3">
                          <Calendar size={18} className="text-gray-400" />
                          <div className="flex-1">
                              <label className="block text-[10px] font-bold text-gray-400">التاريخ</label>
@@ -466,7 +465,7 @@ const Dashboard: React.FC = () => {
 
                      <div 
                         onClick={() => setIsRecurring(!isRecurring)}
-                        className={`flex-1 p-3 rounded-2xl border cursor-pointer transition-all flex items-center gap-3 ${isRecurring ? `${accentBg} ${accentBorder}` : 'bg-gray-50 dark:bg-gray-800/50 border-gray-100 dark:border-gray-700'}`}
+                        className={`flex-1 p-3 rounded-2xl border cursor-pointer transition-all flex items-center gap-3 ${isRecurring ? `${accentBg} ${accentBorder}` : 'bg-gray-50 dark:bg-gray-700/50 border-gray-100 dark:border-gray-700'}`}
                      >
                          <Repeat size={18} className={isRecurring ? accentText : 'text-gray-400'} />
                          <div className="flex-1">
@@ -479,7 +478,7 @@ const Dashboard: React.FC = () => {
                  </div>
 
                  {isRecurring && (
-                     <div className="animate-[fadeIn_0.3s_ease-out] bg-gray-50 dark:bg-gray-800/50 p-3 rounded-2xl border border-gray-100 dark:border-gray-700 flex gap-2 overflow-x-auto">
+                     <div className="animate-[fadeIn_0.3s_ease-out] bg-gray-50 dark:bg-gray-700/50 p-3 rounded-2xl border border-gray-100 dark:border-gray-700 flex gap-2 overflow-x-auto">
                         {['daily', 'weekly', 'monthly', 'yearly'].map((freq) => (
                             <button
                                 key={freq}
