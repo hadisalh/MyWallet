@@ -1,8 +1,10 @@
+
 const CACHE_NAME = 'mywallet-cache-v1';
 const ASSETS = [
   '/',
   '/index.html',
-  '/manifest.json'
+  '/manifest.json',
+  '/icon.png'
 ];
 
 self.addEventListener('install', (event) => {
