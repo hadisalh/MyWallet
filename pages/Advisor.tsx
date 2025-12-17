@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useFinance } from '../context/FinanceContext';
 import { GoogleGenAI } from "@google/genai";
@@ -29,7 +30,9 @@ const Advisor: React.FC = () => {
     setIsLoading(true);
 
     try {
-        const apiKey = process.env.API_KEY;
+        // الوصول للمفتاح عبر الكائن المعرف في index.html أو البيئة
+        const apiKey = (window as any).process?.env?.API_KEY || (process as any).env?.API_KEY;
+        
         if (!apiKey) throw new Error("API_KEY_MISSING");
 
         const ai = new GoogleGenAI({ apiKey });
@@ -54,7 +57,7 @@ const Advisor: React.FC = () => {
     } catch (error: any) {
         let errorText = "حدث خطأ أثناء الاتصال بالمستشار الذكي.";
         if (error.message === "API_KEY_MISSING") {
-          errorText = "يرجى إعداد مفتاح API الخاص بـ Gemini في بيئة العمل لتفعيل المستشار المالي.";
+          errorText = "يرجى إعداد مفتاح API الخاص بـ Gemini في إعدادات Vercel (Environment Variables) لتفعيل المستشار المالي.";
         }
         setMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: errorText }]);
     } finally {
