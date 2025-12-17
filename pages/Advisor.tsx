@@ -36,19 +36,24 @@ const Advisor: React.FC = () => {
     
     const totalDebt = people.reduce((sum, p) => sum + p.debts.filter(d => d.status !== 'paid').reduce((dSum, d) => dSum + (d.amount - d.paidAmount), 0), 0);
     
+    // Dynamic mapping of budget segments for the AI context
+    const budgetDistribution = budget.segments
+        .map(seg => `${seg.name}: ${seg.ratio}%`)
+        .join('، ');
+
     return `
       السياق المالي للمستخدم (العملة: ${settings.currency}):
-      - إجمالي الدخل: ${totalIncome}
-      - إجمالي المصروفات: ${totalExpense}
-      - الرصيد الحالي: ${totalIncome - totalExpense}
+      - إجمالي الدخل التاريخي: ${totalIncome}
+      - إجمالي المصروفات التاريخية: ${totalExpense}
+      - الرصيد الحالي التقديري: ${totalIncome - totalExpense}
       - أعلى المصروفات مؤخراً: ${topExpenses || 'لا يوجد'}
       - الميزانية الشهرية المستهدفة: ${budget.monthlyIncome}
-      - توزيع الميزانية: أساسيات ${budget.needsRatio}%، رغبات ${budget.wantsRatio}%، ادخار ${budget.savingsRatio}%
-      - إجمالي الديون المستحقة: ${totalDebt}
+      - توزيع الميزانية المستهدف: ${budgetDistribution}
+      - إجمالي الديون المتبقية (عليّ و لي): ${totalDebt}
       
       دورك: أنت مستشار مالي ذكي ومحترف جداً يدعى "المستشار الذكي".
       تحدث باللغة العربية بأسلوب لبق، مشجع، ومحترف.
-      حلل البيانات وقدم نصيحة دقيقة ومختصرة.
+      حلل البيانات وقدم نصيحة مخصصة ودقيقة بناءً على الأرقام أعلاه.
     `;
   };
 
@@ -68,15 +73,15 @@ const Advisor: React.FC = () => {
 
     try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const model = 'gemini-2.5-flash';
+        const modelName = 'gemini-3-flash-preview';
         const context = getFinancialContext();
         const prompt = `${context}\n\nسؤال المستخدم: ${text}`;
 
         const response = await ai.models.generateContent({
-            model: model,
+            model: modelName,
             contents: prompt, 
             config: {
-                systemInstruction: "You are a helpful, professional financial advisor speaking Arabic.",
+                systemInstruction: "You are a helpful, professional financial advisor speaking Arabic. Use markdown for bolding important numbers and structure. Be encouraging but realistic.",
             }
         });
 
@@ -94,7 +99,7 @@ const Advisor: React.FC = () => {
         setMessages(prev => [...prev, {
             id: (Date.now() + 1).toString(),
             role: 'model',
-            text: 'عذراً، واجهت مشكلة في الاتصال. يرجى المحاولة لاحقاً.',
+            text: 'عذراً، واجهت مشكلة في الاتصال. يرجى المحاولة لاحقاً والتأكد من توفر مفتاح API صالح.',
             timestamp: new Date()
         }]);
     } finally {
@@ -106,25 +111,23 @@ const Advisor: React.FC = () => {
     { 
         icon: <Zap className="w-4 h-4 text-yellow-500" />, 
         title: "تحليل سريع", 
-        prompt: "قم بتحليل وضعي المالي الحالي بشكل شامل." 
+        prompt: "قم بتحليل وضعي المالي الحالي بشكل شامل بناءً على بياناتي." 
     },
     { 
         icon: <TrendingUp className="w-4 h-4 text-emerald-500" />, 
         title: "نصيحة توفير", 
-        prompt: "كيف أقلل من مصاريفي بناءً على سجلاتي؟" 
+        prompt: "بناءً على مصروفاتي، كيف يمكنني تقليل الإنفاق والادخار بشكل أفضل؟" 
     },
     { 
         icon: <ShieldCheck className="w-4 h-4 text-blue-500" />, 
         title: "تقييم الميزانية", 
-        prompt: "هل توزيع ميزانيتي الحالي مناسب؟" 
+        prompt: "هل توزيع ميزانيتي الحالي (50-30-20 أو غيره) مناسب لظروفي؟" 
     },
   ];
 
   return (
-    // Replaced absolute positioning with flex-col for better layout stability
     <div className="flex flex-col h-[80vh] lg:h-[calc(100vh-8rem)] max-w-5xl mx-auto bg-white dark:bg-gray-800 rounded-[2rem] border border-gray-100 dark:border-gray-700 shadow-xl overflow-hidden relative">
         
-        {/* Header - Fixed Height */}
         <div className="px-6 py-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-700 flex justify-between items-center z-10 shrink-0">
              <div className="flex items-center gap-3">
                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
@@ -141,21 +144,21 @@ const Advisor: React.FC = () => {
              <button 
                  onClick={() => setMessages([])} 
                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                 title="إعادة ضبط المحادثة"
              >
                  <RefreshCw size={18} />
              </button>
         </div>
 
-        {/* Messages Area - Flex Grow to fill space */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-50/50 dark:bg-[#0f172a]/50 custom-scrollbar scroll-smooth">
             {messages.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center p-4">
                     <div className="w-24 h-24 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center mb-6 shadow-sm border border-gray-100 dark:border-gray-700">
                         <BrainCircuit size={40} className="text-indigo-500 opacity-50" />
                     </div>
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2 text-center">مرحباً بك! أنا مستشارك المالي</h2>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2 text-center">مرحباً بك! أنا مستشارك المالي المعتمد على الذكاء الاصطناعي</h2>
                     <p className="text-gray-500 text-sm text-center max-w-xs mb-8">
-                        يمكنني تحليل بياناتك المسجلة وتقديم نصائح لتحسين وضعك المالي.
+                        يمكنني تحليل مدخلاتك المالية وتقديم خطط ادخار ذكية. اسألني أي شيء!
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-lg">
                         {suggestions.map((s, i) => (
@@ -231,7 +234,6 @@ const Advisor: React.FC = () => {
             )}
         </div>
 
-        {/* Input Area - Docked at bottom - Fixed Height */}
         <div className="p-4 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 shrink-0">
              <div className="relative flex items-center">
                  <input 
@@ -251,7 +253,7 @@ const Advisor: React.FC = () => {
                  </button>
              </div>
              <div className="text-center mt-2">
-                 <p className="text-[10px] text-gray-400">يمكن للذكاء الاصطناعي ارتكاب الأخطاء. يرجى التحقق من المعلومات المهمة.</p>
+                 <p className="text-[10px] text-gray-400">قد يخطئ الذكاء الاصطناعي أحياناً. يُنصح دائماً بمراجعة القرارات المالية الهامة يدوياً.</p>
              </div>
         </div>
     </div>
