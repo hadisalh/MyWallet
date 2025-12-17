@@ -1,97 +1,102 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useFinance } from '../context/FinanceContext';
 import { formatCurrency, formatDate, ICON_MAP } from '../constants';
-import { ArrowDownLeft, ArrowUpRight, TrendingUp, Plus, Trash2, Calendar, Filter, AlertCircle, Users, Target, PieChart as PieChartIcon, Repeat, Check, FileText } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, TrendingUp, Plus, Trash2, Calendar, AlertCircle, PieChart as PieChartIcon, Repeat, Check, FileText } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid, PieChart, Pie } from 'recharts';
 import { Modal } from '../components/ui/Modal';
 import { TransactionType, RecurringFrequency } from '../types';
+import { isSameMonth, parseISO } from 'date-fns';
 
 const Dashboard: React.FC = () => {
-  const { transactions, settings, addTransaction, addRecurring, deleteTransaction, people, goals, budget, categories } = useFinance();
+  const { transactions, settings, addTransaction, addRecurring, deleteTransaction, budget, categories } = useFinance();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState<'all' | 'month'>('all');
 
-  // Form State
   const [amount, setAmount] = useState('');
   const [type, setType] = useState<TransactionType>('expense');
   const [selectedCategory, setSelectedCategory] = useState(categories[0]); 
   const [notes, setNotes] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   
-  // Recurring State
   const [isRecurring, setIsRecurring] = useState(false);
   const [frequency, setFrequency] = useState<RecurringFrequency>('monthly');
 
-  // Theme Colors based on Type
   const isExpense = type === 'expense';
-  const accentColor = isExpense ? 'rose' : 'emerald';
   const accentText = isExpense ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400';
   const accentBg = isExpense ? 'bg-rose-50 dark:bg-rose-900/20' : 'bg-emerald-50 dark:bg-emerald-900/20';
   const accentBorder = isExpense ? 'border-rose-200 dark:border-rose-800' : 'border-emerald-200 dark:border-emerald-800';
 
-  // --- Transactions Calculations ---
-  const filteredTransactions = transactions.filter(t => {
-    if (filter === 'month') {
-      const currentMonth = new Date().toISOString().slice(0, 7);
-      return t.date.startsWith(currentMonth);
-    }
-    return true;
-  });
+  const filteredTransactions = useMemo(() => {
+    const now = new Date();
+    return transactions.filter(t => {
+        if (filter === 'month') {
+            return isSameMonth(parseISO(t.date), now);
+        }
+        return true;
+    });
+  }, [transactions, filter]);
 
-  const totalIncome = filteredTransactions
-    .filter(t => t.type === 'income')
-    .reduce((acc, t) => acc + t.amount, 0);
+  const { totalIncome, totalExpense } = useMemo(() => {
+      const income = filteredTransactions
+        .filter(t => t.type === 'income')
+        .reduce((acc, t) => acc + t.amount, 0);
 
-  const totalExpense = filteredTransactions
-    .filter(t => t.type === 'expense')
-    .reduce((acc, t) => acc + t.amount, 0);
+      const expense = filteredTransactions
+        .filter(t => t.type === 'expense')
+        .reduce((acc, t) => acc + t.amount, 0);
+      
+      return { totalIncome: income, totalExpense: expense };
+  }, [filteredTransactions]);
 
   const balance = totalIncome - totalExpense;
   const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpense) / totalIncome) * 100 : 0;
 
-  // --- Budget Calculations ---
-  const currentMonthISO = new Date().toISOString().slice(0, 7);
-  const monthlyExpenses = transactions
-    .filter(t => t.type === 'expense' && t.date.startsWith(currentMonthISO))
-    .reduce((acc, t) => acc + t.amount, 0);
-  const budgetProgress = budget.monthlyIncome > 0 ? (monthlyExpenses / budget.monthlyIncome) * 100 : 0;
+  const { monthlyExpenses, budgetProgress } = useMemo(() => {
+      const now = new Date();
+      const expenses = transactions
+        .filter(t => t.type === 'expense' && isSameMonth(parseISO(t.date), now))
+        .reduce((acc, t) => acc + t.amount, 0);
+      const progress = budget.monthlyIncome > 0 ? (expenses / budget.monthlyIncome) * 100 : 0;
+      return { monthlyExpenses: expenses, budgetProgress: progress };
+  }, [transactions, budget.monthlyIncome]);
 
-  // --- Debts Calculations ---
-  const totalOwedToMe = people
-    .filter(p => p.relationType === 'owes_me')
-    .reduce((sum, p) => sum + p.debts.reduce((dSum, d) => dSum + (d.amount - d.paidAmount), 0), 0);
-
-  const totalIOwe = people
-    .filter(p => p.relationType === 'i_owe')
-    .reduce((sum, p) => sum + p.debts.reduce((dSum, d) => dSum + (d.amount - d.paidAmount), 0), 0);
-
-  // --- Charts Data Preparation ---
-  const barChartData = [
+  const barChartData = useMemo(() => [
     { name: 'الدخل', amount: totalIncome, color: '#10b981' },
     { name: 'المصروفات', amount: totalExpense, color: '#ef4444' },
-  ];
+  ], [totalIncome, totalExpense]);
 
-  const categoryExpenses = filteredTransactions
-    .filter(t => t.type === 'expense')
-    .reduce((acc, t) => {
-        const existing = acc.find(c => c.name === t.category);
-        if (existing) {
-            existing.value += t.amount;
-        } else {
-            const defaultCat = categories.find(dc => dc.label === t.category);
-            acc.push({ 
-                name: t.category, 
-                value: t.amount, 
-                color: defaultCat ? defaultCat.color : '#94a3b8' 
-            });
-        }
-        return acc;
-    }, [] as { name: string, value: number, color: string }[])
-    .sort((a, b) => b.value - a.value);
+  const categoryExpenses = useMemo(() => {
+      return filteredTransactions
+        .filter(t => t.type === 'expense')
+        .reduce((acc, t) => {
+            const existing = acc.find(c => c.name === t.category);
+            if (existing) {
+                existing.value += t.amount;
+            } else {
+                const defaultCat = categories.find(dc => dc.label === t.category);
+                acc.push({ 
+                    name: t.category, 
+                    value: t.amount, 
+                    color: defaultCat ? defaultCat.color : '#94a3b8' 
+                });
+            }
+            return acc;
+        }, [] as { name: string, value: number, color: string }[])
+        .sort((a, b) => b.value - a.value);
+  }, [filteredTransactions, categories]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount) return;
+    
+    let finalDate: string;
+    if (date) {
+        const [y, m, d] = date.split('-').map(Number);
+        const localDate = new Date(y, m - 1, d, 12, 0, 0); 
+        finalDate = localDate.toISOString();
+    } else {
+        finalDate = new Date().toISOString();
+    }
     
     if (isRecurring) {
         addRecurring({
@@ -100,7 +105,7 @@ const Dashboard: React.FC = () => {
             category: selectedCategory.label,
             notes,
             frequency,
-            startDate: date || new Date().toISOString()
+            startDate: finalDate
         });
         alert('تم إضافة العملية المتكررة بنجاح');
     } else {
@@ -109,7 +114,7 @@ const Dashboard: React.FC = () => {
             type,
             category: selectedCategory.label,
             notes,
-            date: date ? new Date(date).toISOString() : new Date().toISOString(),
+            date: finalDate,
         });
     }
     
@@ -135,33 +140,33 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Header & Controls */}
-      <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center gap-6">
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-           <div className="relative bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex-1 sm:flex-none">
-             <select 
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="w-full appearance-none bg-transparent pl-8 pr-4 py-2.5 text-sm font-bold text-gray-700 dark:text-gray-200 focus:outline-none cursor-pointer"
+      <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center gap-4">
+        
+        <div className="bg-white dark:bg-gray-800 p-1 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex w-full sm:w-auto">
+            <button
+                onClick={() => setFilter('all')}
+                className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all ${filter === 'all' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
             >
-              <option value="all">كل الوقت</option>
-              <option value="month">هذا الشهر</option>
-            </select>
-            <Filter size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-           </div>
-          <button 
-            onClick={() => setIsAddModalOpen(true)}
-            className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary-500/20 active:scale-95 flex-1 sm:flex-none"
-          >
-            <Plus size={18} />
-            <span className="hidden sm:inline">عملية جديدة</span>
-            <span className="sm:hidden">إضافة</span>
-          </button>
+                كل الوقت
+            </button>
+            <button
+                onClick={() => setFilter('month')}
+                className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all ${filter === 'month' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+            >
+                هذا الشهر
+            </button>
         </div>
+
+        <button 
+          onClick={() => setIsAddModalOpen(true)}
+          className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary-500/20 active:scale-95 w-full sm:w-auto"
+        >
+          <Plus size={18} />
+          <span>عملية جديدة</span>
+        </button>
       </div>
 
-      {/* Main Balance Card */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-dark-900 to-dark-800 dark:from-primary-900 dark:to-dark-900 p-8 shadow-2xl shadow-gray-200 dark:shadow-black/50 text-white">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-dark-900 to-dark-800 dark:from-primary-900 dark:to-dark-900 p-8 shadow-2xl shadow-gray-200 dark:shadow-black/50 text-white transform transition-transform hover:scale-[1.01] duration-300">
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-primary-500/20 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3"></div>
           
@@ -196,9 +201,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column (Main) */}
         <div className="lg:col-span-2 space-y-6">
-            {/* Expense Breakdown Chart */}
             {categoryExpenses.length > 0 && (
                 <div className="bg-white dark:bg-dark-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
                     <div className="flex justify-between items-center mb-4">
@@ -224,7 +227,7 @@ const Dashboard: React.FC = () => {
                                         ))}
                                     </Pie>
                                     <Tooltip 
-                                        formatter={(val: number) => formatCurrency(val, settings.currency)}
+                                        formatter={(val) => formatCurrency(Number(val), settings.currency)}
                                         contentStyle={{ backgroundColor: 'rgba(30, 41, 59, 0.9)', borderRadius: '12px', border: 'none', color: 'white' }}
                                     />
                                 </PieChart>
@@ -245,7 +248,6 @@ const Dashboard: React.FC = () => {
                 </div>
             )}
 
-            {/* Income/Expense Bar Chart */}
             <div className="bg-white dark:bg-dark-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="font-bold text-lg text-gray-900 dark:text-white">تحليل التدفقات</h3>
@@ -273,7 +275,7 @@ const Dashboard: React.FC = () => {
                             backgroundColor: 'rgba(30, 41, 59, 0.9)', 
                             borderRadius: '12px', 
                             border: 'none', 
-                            padding: '12px',
+                            padding: '12px', 
                             color: '#fff'
                         }}
                         itemStyle={{ color: '#fff', fontWeight: 'bold' }}
@@ -292,7 +294,6 @@ const Dashboard: React.FC = () => {
                 </div>
             </div>
 
-            {/* Recent Transactions List */}
             <div className="bg-white dark:bg-dark-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="font-bold text-lg text-gray-900 dark:text-white">أحدث العمليات</h3>
@@ -345,9 +346,7 @@ const Dashboard: React.FC = () => {
             </div>
         </div>
 
-        {/* Right Column (Side Widgets) */}
         <div className="space-y-6">
-            {/* ... Right widgets unchanged for brevity, they don't impact the modal ... */}
             <div className="bg-white dark:bg-dark-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-sm">
@@ -377,14 +376,11 @@ const Dashboard: React.FC = () => {
                     </div>
                 )}
             </div>
-            {/* ... Other widgets ... */}
         </div>
       </div>
 
-      {/* LUXURY ADD TRANSACTION MODAL */}
       <Modal isOpen={isAddModalOpen} onClose={() => { setIsAddModalOpen(false); resetForm(); }} title=" ">
         <div className="relative -mt-6">
-             {/* Type Switcher */}
              <div className="flex justify-center mb-6">
                  <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-2xl flex w-full max-w-sm relative shadow-inner">
                      <button
@@ -407,7 +403,6 @@ const Dashboard: React.FC = () => {
              </div>
 
              <form onSubmit={handleSubmit} className="space-y-5">
-                 {/* Massive Amount Input */}
                  <div className={`relative p-6 rounded-3xl transition-colors duration-300 border ${accentBg} ${accentBorder}`}>
                      <label className={`block text-xs font-bold mb-1 uppercase tracking-wider text-center opacity-70 ${accentText}`}>
                          قيمة المبلغ
@@ -417,7 +412,6 @@ const Dashboard: React.FC = () => {
                          <input 
                             type="number"
                             required
-                            autoFocus
                             min="0"
                             step="0.01"
                             value={amount}
@@ -428,7 +422,6 @@ const Dashboard: React.FC = () => {
                      </div>
                  </div>
 
-                 {/* Categories Grid */}
                  <div>
                      <label className="block text-xs font-bold text-gray-500 mb-3 px-1">اختر التصنيف</label>
                      <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
@@ -457,7 +450,6 @@ const Dashboard: React.FC = () => {
                      </div>
                  </div>
 
-                 {/* Date & Recurring */}
                  <div className="flex gap-3">
                      <div className="flex-1 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-2xl border border-gray-100 dark:border-gray-700 flex items-center gap-3">
                          <Calendar size={18} className="text-gray-400" />
@@ -486,7 +478,6 @@ const Dashboard: React.FC = () => {
                      </div>
                  </div>
 
-                 {/* Recurring Options */}
                  {isRecurring && (
                      <div className="animate-[fadeIn_0.3s_ease-out] bg-gray-50 dark:bg-gray-800/50 p-3 rounded-2xl border border-gray-100 dark:border-gray-700 flex gap-2 overflow-x-auto">
                         {['daily', 'weekly', 'monthly', 'yearly'].map((freq) => (
@@ -506,7 +497,6 @@ const Dashboard: React.FC = () => {
                      </div>
                  )}
 
-                 {/* Notes */}
                  <div className="relative">
                      <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-gray-400">
                          <FileText size={18} />
@@ -520,7 +510,6 @@ const Dashboard: React.FC = () => {
                      />
                  </div>
 
-                 {/* Submit Button */}
                  <button 
                     type="submit"
                     className={`w-full py-4 rounded-2xl font-bold text-white text-lg shadow-xl hover:shadow-2xl hover:-translate-y-1 active:translate-y-0 transition-all duration-300 flex items-center justify-center gap-3 ${isExpense ? 'bg-gradient-to-r from-rose-500 to-pink-600 shadow-rose-500/30' : 'bg-gradient-to-r from-emerald-500 to-teal-600 shadow-emerald-500/30'}`}

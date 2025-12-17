@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { AppSettings, BudgetConfig, Goal, Person, Transaction, Notification, DebtItem, Category, RecurringTransaction } from '../types';
 import { generateId, DEFAULT_CATEGORIES_DATA } from '../constants';
 import { addDays, addWeeks, addMonths, addYears, isSameDay, isAfter, parseISO } from 'date-fns';
@@ -31,13 +31,11 @@ interface FinanceContextType {
   updateSettings: (settings: Partial<AppSettings>) => void;
   markNotificationRead: (id: string) => void;
 
-  // New Actions for Features 1 & 4
   addCategory: (c: Omit<Category, 'id'>) => void;
   deleteCategory: (id: string) => void;
   addRecurring: (r: Omit<RecurringTransaction, 'id' | 'nextRunDate' | 'active'>) => void;
   deleteRecurring: (id: string) => void;
 
-  // Data Management
   exportData: () => void;
   importData: (file: File) => Promise<boolean>;
   resetData: () => void;
@@ -49,11 +47,14 @@ const defaultSettings: AppSettings = {
   notificationsEnabled: true,
 };
 
+// Default budget with segments
 const defaultBudget: BudgetConfig = {
   monthlyIncome: 0,
-  needsRatio: 60,
-  wantsRatio: 30,
-  savingsRatio: 10,
+  segments: [
+    { id: '1', name: 'حاجات أساسية', ratio: 50, color: '#3b82f6' },
+    { id: '2', name: 'رغبات ثانوية', ratio: 30, color: '#f59e0b' },
+    { id: '3', name: 'ادخار واستثمار', ratio: 20, color: '#10b981' }
+  ]
 };
 
 const safeLoad = <T,>(key: string, fallback: T): T => {
@@ -67,35 +68,77 @@ const safeLoad = <T,>(key: string, fallback: T): T => {
   }
 };
 
+const loadBudgetWithMigration = (): BudgetConfig => {
+    try {
+        const item = localStorage.getItem('budget');
+        if (!item) return defaultBudget;
+        const parsed = JSON.parse(item);
+        
+        // Migrate old format to new segment format
+        if ('needsRatio' in parsed && !('segments' in parsed)) {
+            return {
+                monthlyIncome: parsed.monthlyIncome || 0,
+                segments: [
+                    { id: generateId(), name: 'حاجات أساسية', ratio: parsed.needsRatio || 50, color: '#3b82f6' },
+                    { id: generateId(), name: 'رغبات ثانوية', ratio: parsed.wantsRatio || 30, color: '#f59e0b' },
+                    { id: generateId(), name: 'ادخار واستثمار', ratio: parsed.savingsRatio || 20, color: '#10b981' }
+                ]
+            };
+        }
+        return parsed.segments ? parsed : defaultBudget;
+    } catch (e) {
+        return defaultBudget;
+    }
+};
+
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
 
 export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [transactions, setTransactions] = useState<Transaction[]>(() => safeLoad('transactions', []));
   const [people, setPeople] = useState<Person[]>(() => safeLoad('people', []));
   const [goals, setGoals] = useState<Goal[]>(() => safeLoad('goals', []));
-  const [budget, setBudget] = useState<BudgetConfig>(() => safeLoad('budget', defaultBudget));
+  const [budget, setBudget] = useState<BudgetConfig>(() => loadBudgetWithMigration());
   const [settings, setSettings] = useState<AppSettings>(() => safeLoad('settings', defaultSettings));
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  
-  // New State for Features 1 & 4
   const [categories, setCategories] = useState<Category[]>(() => safeLoad('categories', DEFAULT_CATEGORIES_DATA));
   const [recurringTransactions, setRecurringTransactions] = useState<RecurringTransaction[]>(() => safeLoad('recurring', []));
 
-  // --- PERSISTENCE EFFECTS ---
-  useEffect(() => { localStorage.setItem('transactions', JSON.stringify(transactions)); }, [transactions]);
-  useEffect(() => { localStorage.setItem('people', JSON.stringify(people)); }, [people]);
-  useEffect(() => { localStorage.setItem('goals', JSON.stringify(goals)); }, [goals]);
-  useEffect(() => { localStorage.setItem('budget', JSON.stringify(budget)); }, [budget]);
-  useEffect(() => { localStorage.setItem('settings', JSON.stringify(settings)); }, [settings]);
-  useEffect(() => { localStorage.setItem('categories', JSON.stringify(categories)); }, [categories]);
-  useEffect(() => { localStorage.setItem('recurring', JSON.stringify(recurringTransactions)); }, [recurringTransactions]);
+  useEffect(() => {
+    const handler = setTimeout(() => { localStorage.setItem('transactions', JSON.stringify(transactions)); }, 500);
+    return () => clearTimeout(handler);
+  }, [transactions]);
 
   useEffect(() => {
+    const handler = setTimeout(() => { localStorage.setItem('people', JSON.stringify(people)); }, 500);
+    return () => clearTimeout(handler);
+  }, [people]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => { localStorage.setItem('goals', JSON.stringify(goals)); }, 500);
+    return () => clearTimeout(handler);
+  }, [goals]);
+
+  useEffect(() => {
+    localStorage.setItem('budget', JSON.stringify(budget));
+  }, [budget]); 
+
+  useEffect(() => {
+    localStorage.setItem('settings', JSON.stringify(settings));
     if (settings.darkMode) document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
-  }, [settings.darkMode]);
+  }, [settings]);
 
-  // --- RECURRING LOGIC PROCESSOR ---
+  useEffect(() => {
+    const handler = setTimeout(() => { localStorage.setItem('categories', JSON.stringify(categories)); }, 500);
+    return () => clearTimeout(handler);
+  }, [categories]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => { localStorage.setItem('recurring', JSON.stringify(recurringTransactions)); }, 500);
+    return () => clearTimeout(handler);
+  }, [recurringTransactions]);
+
+
   useEffect(() => {
     const processRecurring = () => {
         const today = new Date();
@@ -107,11 +150,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
             let nextRun = parseISO(rec.nextRunDate);
             let modifiedRec = { ...rec };
             
-            // If the next run date is today or in the past, generate transaction
             if (isSameDay(nextRun, today) || isAfter(today, nextRun)) {
                 hasChanges = true;
-                
-                // Add Transaction
                 newTransactions.push({
                     id: generateId(),
                     amount: rec.amount,
@@ -122,7 +162,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
                     isRecurring: true
                 });
 
-                // Calculate next run date
                 let nextDate = nextRun;
                 switch (rec.frequency) {
                     case 'daily': nextDate = addDays(nextRun, 1); break;
@@ -138,7 +177,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (hasChanges) {
             setTransactions(prev => [...newTransactions, ...prev]);
             setRecurringTransactions(processedRecurring);
-            // Optionally add a notification
             if(newTransactions.length > 0) {
                  const newNotif: Notification = {
                      id: generateId(),
@@ -153,11 +191,10 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
     };
 
-    const timer = setTimeout(processRecurring, 2000); // Small delay to ensure load
+    const timer = setTimeout(processRecurring, 2000); 
     return () => clearTimeout(timer);
-  }, [recurringTransactions.length]); // Only re-bind if count changes, logic handles inner updates
+  }, [recurringTransactions.length]); 
 
-  // --- ACTIONS ---
   const addTransaction = useCallback((t: Omit<Transaction, 'id'>) => { setTransactions(prev => [{ ...t, id: generateId() }, ...prev]); }, []);
   const deleteTransaction = useCallback((id: string) => { setTransactions(prev => prev.filter(t => t.id !== id)); }, []);
   const addPerson = useCallback((p: Omit<Person, 'id' | 'debts'>) => { setPeople(prev => [{ ...p, id: generateId(), debts: [] }, ...prev]); }, []);
@@ -181,7 +218,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const updateSettings = useCallback((s: Partial<AppSettings>) => setSettings(prev => ({ ...prev, ...s })), []);
   const markNotificationRead = useCallback((id: string) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n)), []);
 
-  // New Actions
   const addCategory = useCallback((c: Omit<Category, 'id'>) => {
       setCategories(prev => [...prev, { ...c, id: generateId(), isCustom: true }]);
   }, []);
@@ -194,7 +230,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setRecurringTransactions(prev => [...prev, { 
           ...r, 
           id: generateId(), 
-          nextRunDate: r.startDate, // Initial run date matches start date
+          nextRunDate: r.startDate, 
           active: true 
       }]);
   }, []);
@@ -203,9 +239,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setRecurringTransactions(prev => prev.filter(r => r.id !== id));
   }, []);
 
-  // --- DATA MANAGEMENT ---
   const exportData = useCallback(() => {
-    const data = { transactions, people, goals, budget, settings, categories, recurringTransactions, version: "2.0" };
+    const data = { transactions, people, goals, budget, settings, categories, recurringTransactions, version: "2.1" };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -227,7 +262,26 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           setTransactions(rawData.transactions || []);
           setPeople(rawData.people || []);
           setGoals(rawData.goals || []);
-          setBudget(rawData.budget || defaultBudget);
+          
+          if (rawData.budget) {
+              if (rawData.budget.segments) {
+                  setBudget(rawData.budget);
+              } else if (rawData.budget.needsRatio !== undefined) {
+                   setBudget({
+                        monthlyIncome: rawData.budget.monthlyIncome || 0,
+                        segments: [
+                            { id: generateId(), name: 'حاجات أساسية', ratio: rawData.budget.needsRatio || 50, color: '#3b82f6' },
+                            { id: generateId(), name: 'رغبات ثانوية', ratio: rawData.budget.wantsRatio || 30, color: '#f59e0b' },
+                            { id: generateId(), name: 'ادخار واستثمار', ratio: rawData.budget.savingsRatio || 20, color: '#10b981' }
+                        ]
+                   });
+              } else {
+                  setBudget(defaultBudget);
+              }
+          } else {
+              setBudget(defaultBudget);
+          }
+          
           setSettings(rawData.settings || defaultSettings);
           setCategories(rawData.categories || DEFAULT_CATEGORIES_DATA);
           setRecurringTransactions(rawData.recurringTransactions || []);
@@ -252,15 +306,24 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setRecurringTransactions([]);
   }, []);
 
+  const contextValue = useMemo(() => ({
+    transactions, people, goals, budget, settings, notifications, categories, recurringTransactions,
+    addTransaction, deleteTransaction, addPerson, deletePerson,
+    addDebtToPerson, updateDebt, addGoal, updateGoal, deleteGoal,
+    updateBudget, updateSettings, markNotificationRead,
+    addCategory, deleteCategory, addRecurring, deleteRecurring,
+    exportData, importData, resetData
+  }), [
+    transactions, people, goals, budget, settings, notifications, categories, recurringTransactions,
+    addTransaction, deleteTransaction, addPerson, deletePerson,
+    addDebtToPerson, updateDebt, addGoal, updateGoal, deleteGoal,
+    updateBudget, updateSettings, markNotificationRead,
+    addCategory, deleteCategory, addRecurring, deleteRecurring,
+    exportData, importData, resetData
+  ]);
+
   return (
-    <FinanceContext.Provider value={{
-      transactions, people, goals, budget, settings, notifications, categories, recurringTransactions,
-      addTransaction, deleteTransaction, addPerson, deletePerson,
-      addDebtToPerson, updateDebt, addGoal, updateGoal, deleteGoal,
-      updateBudget, updateSettings, markNotificationRead,
-      addCategory, deleteCategory, addRecurring, deleteRecurring,
-      exportData, importData, resetData
-    }}>
+    <FinanceContext.Provider value={contextValue}>
       {children}
     </FinanceContext.Provider>
   );

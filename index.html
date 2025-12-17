@@ -84,6 +84,12 @@
         background: #334155; 
       }
       
+      /* Hardware Acceleration Classes */
+      .transform-gpu {
+        transform: translateZ(0);
+        will-change: transform, opacity;
+      }
+
       /* Animations */
       @keyframes float {
         0% { transform: translateY(0px); }

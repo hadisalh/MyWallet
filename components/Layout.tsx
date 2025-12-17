@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { Bell, Moon, Sun, Wallet, Sparkles, Calendar, Menu } from 'lucide-react';
+import { Bell, Moon, Sun, Wallet, Calendar } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { MENU_ITEMS } from '../constants';
 
@@ -20,7 +20,6 @@ export const Layout: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Detect keyboard open (Input focus) to hide bottom nav
   useEffect(() => {
     const handleFocusIn = (e: FocusEvent) => {
       const target = e.target as HTMLElement;
@@ -53,10 +52,9 @@ export const Layout: React.FC = () => {
   }).format(new Date());
 
   return (
-    // Use 100dvh to handle mobile address bars correctly
     <div className="flex h-[100dvh] bg-[#f8fafc] dark:bg-[#020617] overflow-hidden font-sans relative selection:bg-primary-500 selection:text-white transition-colors duration-500">
       
-      {/* --- Fresh White & Green Splash Screen --- */}
+      {/* Splash Screen */}
       <div 
         className={`fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center transition-all duration-1000 ease-in-out ${showSplash ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
       >
@@ -89,7 +87,7 @@ export const Layout: React.FC = () => {
          </div>
       </div>
 
-      {/* 2. Premium Sidebar (Desktop) */}
+      {/* Sidebar (Desktop) */}
       <aside className="hidden lg:flex flex-col w-72 m-4 rounded-[2.5rem] bg-white/90 dark:bg-[#0f172a]/90 backdrop-blur-2xl border border-white/50 dark:border-white/5 shadow-2xl shadow-gray-200/50 dark:shadow-black/50 relative z-30 overflow-hidden">
         <div className="h-32 flex flex-col items-center justify-center relative">
              <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-primary-500/20 to-transparent"></div>
@@ -148,73 +146,52 @@ export const Layout: React.FC = () => {
         </div>
       </aside>
 
-      {/* 3. Main Content Area */}
+      {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-        {/* Background Gradients */}
         <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-primary-50/50 to-transparent dark:from-primary-900/5 dark:to-transparent pointer-events-none"></div>
 
-        {/* --- LUXURY HEADER --- */}
         <header className="z-40 sticky top-0 transition-all duration-300">
-          {/* Glass Container */}
-          <div className="mx-0 lg:mx-8 lg:mt-4 lg:rounded-3xl bg-white/80 dark:bg-[#0f172a]/80 backdrop-blur-xl border-b lg:border border-white/20 dark:border-white/5 shadow-sm lg:shadow-xl lg:shadow-gray-200/20 dark:lg:shadow-black/20 px-6 py-4 flex items-center justify-between">
+          <div className="mx-0 lg:mx-6 lg:mt-3 lg:rounded-2xl bg-white/90 dark:bg-[#0f172a]/90 backdrop-blur-md border-b lg:border border-white/20 dark:border-white/5 shadow-sm lg:shadow-md px-5 py-3 flex items-center justify-between">
             
-            {/* Left: Title & Date */}
-            <div className="flex flex-col">
-               <div className="flex items-center gap-2 mb-1">
-                  <Calendar size={12} className="text-primary-600 dark:text-primary-400" />
-                  <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    {todayDate}
-                  </span>
-               </div>
-               <div className="flex items-center gap-3">
-                 <h1 className="text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
-                    {getPageTitle()}
-                 </h1>
-                 <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-900/30">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                    </span>
-                    <span className="text-[10px] font-bold text-green-700 dark:text-green-400">متصل</span>
-                 </div>
+            <div className="flex items-center gap-3">
+               <div className="flex flex-col">
+                   <h1 className="text-xl font-black text-gray-900 dark:text-white tracking-tight leading-none">
+                      {getPageTitle()}
+                   </h1>
+                   <div className="flex items-center gap-1.5 mt-1">
+                      <Calendar size={10} className="text-primary-500" />
+                      <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                        {todayDate}
+                      </span>
+                   </div>
                </div>
             </div>
 
-            {/* Right: Actions */}
-            <div className="flex items-center gap-3 lg:gap-4">
-              
-              {/* Controls Group */}
-              <div className="flex items-center p-1.5 bg-gray-100/80 dark:bg-gray-800/80 rounded-2xl border border-white/50 dark:border-white/5 backdrop-blur-sm">
-                
-                {/* Theme Toggle */}
+            <div className="flex items-center gap-2">
                 <button
                   onClick={() => updateSettings({ darkMode: !settings.darkMode })}
-                  className="w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-primary-400 hover:shadow-sm transition-all duration-300"
+                  className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-primary-600 dark:hover:text-primary-400 transition-all active:scale-95"
                   title="تغيير المظهر"
                 >
                   {settings.darkMode ? <Sun size={18} /> : <Moon size={18} />}
                 </button>
 
-                <div className="w-[1px] h-6 bg-gray-200 dark:bg-gray-700 mx-1"></div>
-
-                {/* Notifications */}
                 <div className="relative">
                   <button
                     onClick={() => setShowNotifications(!showNotifications)}
-                    className="w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-primary-400 hover:shadow-sm transition-all duration-300 relative"
+                    className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-primary-600 dark:hover:text-primary-400 transition-all active:scale-95 relative"
                     title="الإشعارات"
                   >
                     <Bell size={18} />
                     {unreadCount > 0 && (
-                      <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white dark:ring-[#0f172a] animate-pulse"></span>
+                      <span className="absolute top-2 right-2.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white dark:ring-[#0f172a]"></span>
                     )}
                   </button>
 
-                  {/* Dropdown */}
                   {showNotifications && (
                     <>
                         <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)}></div>
-                        <div className="absolute left-0 top-14 w-80 sm:w-96 bg-white dark:bg-[#0f172a] rounded-[2rem] shadow-2xl shadow-gray-300/50 dark:shadow-black/60 border border-gray-100 dark:border-white/10 z-50 overflow-hidden animate-[fadeIn_0.2s_ease-out] origin-top-left">
+                        <div className="absolute left-0 top-12 w-80 sm:w-96 bg-white dark:bg-[#0f172a] rounded-[2rem] shadow-2xl shadow-gray-300/50 dark:shadow-black/60 border border-gray-100 dark:border-white/10 z-50 overflow-hidden animate-[fadeIn_0.2s_ease-out] origin-top-left">
                           <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-white/5 backdrop-blur-md">
                               <h3 className="font-bold text-gray-900 dark:text-white">الإشعارات</h3>
                               {unreadCount > 0 && <span className="bg-primary-600 text-white text-[10px] px-2.5 py-1 rounded-full font-bold shadow-lg shadow-primary-500/20">{unreadCount} جديد</span>}
@@ -251,15 +228,10 @@ export const Layout: React.FC = () => {
                     </>
                   )}
                 </div>
-              </div>
             </div>
           </div>
         </header>
 
-        {/* 
-            Main Scrollable Area
-            Added padding-bottom: pb-40 to ensure the last list item clears the floating nav bar 
-        */}
         <div className="flex-1 overflow-auto p-4 lg:p-12 pb-40 lg:pb-12 z-0 scroll-smooth">
           <div className="animate-[fadeIn_0.6s_ease-out]">
              <Outlet />
@@ -267,6 +239,7 @@ export const Layout: React.FC = () => {
         </div>
       </main>
 
+      {/* Mobile Nav */}
       <nav 
         className={`fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md bg-white/90 dark:bg-[#0f172a]/90 backdrop-blur-2xl border border-white/20 dark:border-white/10 rounded-[2rem] lg:hidden z-40 shadow-2xl shadow-black/20 ring-1 ring-black/5 transition-all duration-300 ease-in-out ${isInputFocused ? 'translate-y-32 opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}
       >

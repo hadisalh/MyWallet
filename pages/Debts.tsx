@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useFinance } from '../context/FinanceContext';
 import { formatCurrency, formatDate } from '../constants';
 import { Modal } from '../components/ui/Modal';
-import { Plus, User, ArrowUpRight, ArrowDownLeft, Trash2, Calendar, Banknote, CheckCircle2, Calculator, Clock, AlertCircle } from 'lucide-react';
+import { Plus, User, ArrowUpRight, ArrowDownLeft, Trash2, Banknote, CheckCircle2, Calculator, Clock } from 'lucide-react';
 import { DebtType, Person, DebtItem } from '../types';
 
 export default function Debts() {
@@ -51,8 +51,13 @@ export default function Debts() {
     e.preventDefault();
     if (!selectedPerson) return;
     
+    // Save as Noon Local Time to prevent timezone shift in Calendar
+    const now = new Date();
+    const recordingDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0).toISOString();
+
     addDebtToPerson(selectedPerson.id, {
       amount: parseFloat(newDebtAmount),
+      date: recordingDate, 
       dueDate: newDebtDate,
       notes: newDebtNotes,
     });
@@ -62,18 +67,13 @@ export default function Debts() {
     setNewDebtNotes('');
   };
   
-  // Logic to find a debt to pay when clicking the Quick Pay button on the card
   const handleQuickPay = (e: React.MouseEvent, person: Person) => {
-      e.stopPropagation(); // Stop opening details modal
-      
-      // Find the first unpaid or partial debt
+      e.stopPropagation(); 
       const debtToPay = person.debts.find(d => d.status !== 'paid');
       
       if (debtToPay) {
           setPaymentModalData({ personId: person.id, debt: debtToPay });
       } else {
-          // If all paid, maybe create a new alert or just open details
-          // For now, let's open details if no debt to pay, or just do nothing
           if (person.debts.length > 0) {
               alert('جميع الديون مسددة لهذا الشخص!');
           } else {
@@ -104,16 +104,18 @@ export default function Debts() {
           dueDate: newDueDateStr 
       });
 
-      // Add Transaction Record
+      // Add Transaction Record (at Noon)
       const person = people.find(p => p.id === paymentModalData.personId);
       if (person) {
           const isIncome = person.relationType === 'owes_me'; 
-          
+          const now = new Date();
+          const txDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0).toISOString();
+
           addTransaction({
               amount: finalAmountToAdd,
               type: isIncome ? 'income' : 'expense',
               category: 'سداد ديون',
-              date: new Date().toISOString(),
+              date: txDate,
               notes: `سداد دفعة ${isIncome ? 'من' : 'إلى'} ${person.name} (المتبقي: ${formatCurrency(remaining - finalAmountToAdd, settings.currency)})`
           });
       }
@@ -324,7 +326,7 @@ export default function Debts() {
                         className="w-full p-3 text-sm rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 outline-none"
                         />
                         <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 px-1.5 py-0.5 rounded font-bold pointer-events-none">
-                            تنبيه بعد 30 يوم
+                            استحقاق
                         </span>
                     </div>
                  </div>
@@ -340,7 +342,7 @@ export default function Debts() {
                     disabled={!newDebtAmount || !newDebtDate}
                     className="w-full bg-gray-900 dark:bg-white dark:text-gray-900 hover:bg-gray-800 text-white text-sm font-bold py-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    إضافة للقائمة
+                    تسجيل اليوم
                 </button>
               </div>
             </div>
@@ -364,13 +366,16 @@ export default function Debts() {
                         {formatCurrency(currentRemaining, settings.currency)} 
                         <span className="text-[10px] bg-gray-100 dark:bg-gray-700 text-gray-500 px-1.5 py-0.5 rounded">متبقي</span>
                       </span>
-                      <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
-                          <span className="line-through opacity-50">{formatCurrency(debt.amount, settings.currency)}</span>
-                          <span className="text-gray-300">|</span>
-                          <Clock size={12} className={new Date(debt.dueDate) < new Date() && debt.status !== 'paid' ? 'text-red-500' : ''} />
-                          <span className={new Date(debt.dueDate) < new Date() && debt.status !== 'paid' ? 'text-red-500 font-bold' : ''}>
-                             تنبيه: {formatDate(debt.dueDate)}
-                          </span>
+                      <div className="flex flex-col gap-1 mt-1">
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                              <span className="line-through opacity-50">{formatCurrency(debt.amount, settings.currency)}</span>
+                              <span className="text-gray-300">|</span>
+                              <span>سُجل: {formatDate(debt.date || new Date().toISOString())}</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-500 font-bold">
+                              <Clock size={12} />
+                              <span>استحقاق: {formatDate(debt.dueDate)}</span>
+                          </div>
                       </div>
                       {debt.notes && <p className="text-xs text-gray-400 mt-2 bg-gray-50 dark:bg-gray-700/50 p-1.5 rounded-lg inline-block">{debt.notes}</p>}
                     </div>

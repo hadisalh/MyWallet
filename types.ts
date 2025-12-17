@@ -40,7 +40,8 @@ export interface DebtItem {
   id: string;
   amount: number;
   paidAmount: number;
-  dueDate: string;
+  date: string; // ISO String: Creation/Recording Date
+  dueDate: string; // ISO String: Deadline
   status: DebtStatus;
   notes?: string;
 }
@@ -62,11 +63,17 @@ export interface Goal {
   color: string;
 }
 
+// New Dynamic Budget Structure
+export interface BudgetSegment {
+  id: string;
+  name: string;
+  ratio: number;
+  color: string;
+}
+
 export interface BudgetConfig {
   monthlyIncome: number;
-  needsRatio: number; // e.g., 60
-  wantsRatio: number; // e.g., 30
-  savingsRatio: number; // e.g., 10
+  segments: BudgetSegment[];
 }
 
 export interface AppSettings {
