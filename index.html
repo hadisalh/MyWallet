@@ -1,61 +1,30 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#064e3b" />
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="محفظتي">
-    <meta name="mobile-web-app-capable" content="yes">
-    <title>محفظتي - إدارة الأموال</title>
+    <title>محفظتي - إدارة الأموال الاحترافية</title>
     
+    <script>
+      // تهيئة بيئة العمل لضمان وصول التطبيق لمفتاح API بشكل آمن
+      window.process = window.process || { env: { API_KEY: "" } };
+    </script>
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
         darkMode: 'class',
         theme: {
           extend: {
-            fontFamily: {
-              sans: ['Tajawal', 'sans-serif'],
-            },
+            fontFamily: { sans: ['Tajawal', 'sans-serif'] },
             colors: {
               primary: {
-                50: '#ecfdf5',
-                100: '#d1fae5',
-                200: '#a7f3d0',
-                300: '#6ee7b7',
-                400: '#34d399',
-                500: '#10b981', 
-                600: '#059669',
-                700: '#047857', 
-                800: '#065f46',
-                900: '#064e3b',
-                950: '#022c22',
-              },
-              dark: {
-                50: '#f8fafc',
-                100: '#f1f5f9',
-                200: '#e2e8f0',
-                300: '#cbd5e1',
-                400: '#94a3b8',
-                500: '#64748b',
-                600: '#475569',
-                700: '#334155',
-                800: '#1e293b',
-                900: '#0f172a',
-                950: '#020617',
-              },
-              gold: {
-                100: '#fef3c7',
-                200: '#fde68a',
-                300: '#fcd34d',
-                400: '#fbbf24',
-                500: '#f59e0b',
-                600: '#d97706',
-                700: '#b45309',
-                800: '#92400e',
+                50: '#ecfdf5', 100: '#d1fae5', 200: '#a7f3d0', 300: '#6ee7b7',
+                400: '#34d399', 500: '#10b981', 600: '#059669', 700: '#047857',
+                800: '#065f46', 900: '#064e3b'
               }
             }
           }
@@ -63,32 +32,30 @@
       }
     </script>
     <style>
-      body {
-        font-family: 'Tajawal', sans-serif;
-        overflow-x: hidden;
-      }
-      ::-webkit-scrollbar { width: 6px; height: 6px; }
-      ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
-      .dark ::-webkit-scrollbar-thumb { background: #334155; }
+      body { font-family: 'Tajawal', sans-serif; -webkit-tap-highlight-color: transparent; }
+      .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+      .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; }
     </style>
-  <script type="importmap">
+    <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
+    "react": "https://esm.sh/react@19.0.0",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+    "react-router-dom": "https://esm.sh/react-router-dom@7.1.1?deps=react@19.0.0",
+    "lucide-react": "https://esm.sh/lucide-react@0.460.0?deps=react@19.0.0",
+    "recharts": "https://esm.sh/recharts@2.15.0?deps=react@19.0.0,react-dom@19.0.0",
+    "date-fns": "https://esm.sh/date-fns@4.1.0",
+    "@google/genai": "https://esm.sh/@google/genai@1.34.0",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/",
-    "lucide-react": "https://esm.sh/lucide-react@^0.561.0",
-    "date-fns": "https://esm.sh/date-fns@^4.1.0",
-    "react-router-dom": "https://esm.sh/react-router-dom@^7.11.0",
-    "react-dom": "https://esm.sh/react-dom@^19.2.3",
-    "recharts": "https://esm.sh/recharts@^3.6.0",
-    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
     "vite": "https://esm.sh/vite@^7.3.0",
     "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
   }
 }
 </script>
-</head>
+  </head>
   <body class="bg-gray-50 text-gray-900 dark:bg-[#020617] dark:text-gray-100 transition-colors duration-500">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
