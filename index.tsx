@@ -10,18 +10,22 @@ declare global {
 }
 
 /**
- * تسجيل الـ Service Worker
- * تم التبسيط لضمان العمل في وضع Standalone
+ * تسجيل الـ Service Worker لتمكين ميزات الـ PWA (زر التثبيت)
+ * النسخة الحالية تركز على استقرار التطبيق عبر الإنترنت
  */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js', { scope: './' })
-      .then(reg => console.log('PWA Ready:', reg.scope))
-      .catch(err => console.warn('PWA Offline mode disabled:', err));
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => {
+        console.log('Online PWA Active');
+      })
+      .catch(err => {
+        console.warn('PWA Service Worker registration skipped:', err);
+      });
   });
 }
 
-// التقاط حدث التثبيت
+// التقاط حدث التثبيت لإظهار الزر المخصص في الواجهة
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   window.deferredPrompt = e;
