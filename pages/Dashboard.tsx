@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useFinance } from '../context/FinanceContext';
 import { formatCurrency, formatDate, ICON_MAP } from '../constants';
-import { ArrowDownLeft, ArrowUpRight, Plus, Trash2, AlertCircle, Repeat, Calendar } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Plus, Trash2, AlertCircle, Repeat, Calendar, Wallet, TrendingUp, TrendingDown, Landmark } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid, PieChart, Pie } from 'recharts';
 import { Modal } from '../components/ui/Modal';
 import { TransactionType, RecurringFrequency, Category } from '../types';
@@ -94,26 +94,62 @@ const Dashboard: React.FC = () => {
         </button>
       </div>
 
-      {/* Hero Balance Card */}
-      <div 
-        className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-[#0f172a] to-[#1e293b] p-8 text-white shadow-2xl"
-      >
-          <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-              <div>
-                  <p className="text-gray-400 text-sm font-bold mb-1">الرصيد المتوفر</p>
-                  <h3 className="text-4xl md:text-5xl font-black mb-2">{formatCurrency(balance, settings.currency)}</h3>
-                  <div className="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-xs font-bold w-fit">
-                      {savingsRate.toFixed(1)}% معدل الادخار
+      {/* Hero Balance Card - Enhanced Professional Redesign */}
+      <div className="relative overflow-hidden rounded-[3rem] bg-[#0f172a] p-8 md:p-10 text-white shadow-2xl border border-white/10">
+          {/* Abstract background decorations */}
+          <div className="absolute top-[-20%] right-[-10%] w-[300px] h-[300px] bg-emerald-500/10 rounded-full blur-[80px] pointer-events-none"></div>
+          <div className="absolute bottom-[-20%] left-[-10%] w-[300px] h-[300px] bg-primary-500/10 rounded-full blur-[80px] pointer-events-none"></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.03] pointer-events-none"></div>
+
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              {/* Main Balance Info */}
+              <div className="lg:col-span-7 space-y-4">
+                  <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-white/10 rounded-2xl backdrop-blur-md border border-white/10">
+                          <Wallet size={20} className="text-primary-400" />
+                      </div>
+                      <p className="text-gray-400 text-sm font-bold uppercase tracking-widest">الرصيد المتوفر</p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <h3 className="text-5xl md:text-7xl font-black tracking-tighter bg-gradient-to-l from-white to-gray-400 bg-clip-text text-transparent">
+                        {formatCurrency(balance, settings.currency)}
+                    </h3>
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-4 py-1.5 rounded-2xl text-[11px] font-black uppercase tracking-wider backdrop-blur-md">
+                            <TrendingUp size={14} />
+                            <span>{savingsRate.toFixed(1)}% معدل الادخار</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 bg-white/5 text-gray-400 border border-white/10 px-4 py-1.5 rounded-2xl text-[11px] font-black uppercase tracking-wider backdrop-blur-md">
+                            <Landmark size={14} />
+                            <span>حالة المحفظة: {balance >= 0 ? 'آمنة' : 'عجز'}</span>
+                        </div>
+                    </div>
                   </div>
               </div>
-              <div className="flex gap-4 w-full md:w-auto">
-                  <div className="flex-1 bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/10">
-                      <p className="text-emerald-400 text-xs font-bold mb-1 text-right">الدخل</p>
-                      <p className="text-xl font-black text-right">{formatCurrency(totalIncome, settings.currency)}</p>
+
+              {/* Income/Expense Quick Stats */}
+              <div className="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="group bg-white/5 hover:bg-white/10 backdrop-blur-xl rounded-[2rem] p-6 border border-white/10 transition-all duration-300">
+                      <div className="flex justify-between items-start mb-4">
+                          <div className="p-2 bg-emerald-500/20 rounded-xl border border-emerald-500/30 text-emerald-400 group-hover:scale-110 transition-transform">
+                              <ArrowDownLeft size={20} />
+                          </div>
+                          <span className="text-[10px] font-black text-emerald-500/60 uppercase tracking-widest">Total Income</span>
+                      </div>
+                      <p className="text-emerald-400 text-xs font-bold mb-1 opacity-80">إجمالي الدخل</p>
+                      <p className="text-2xl font-black">{formatCurrency(totalIncome, settings.currency)}</p>
                   </div>
-                  <div className="flex-1 bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/10">
-                      <p className="text-rose-400 text-xs font-bold mb-1 text-right">المصروف</p>
-                      <p className="text-xl font-black text-right">{formatCurrency(totalExpense, settings.currency)}</p>
+
+                  <div className="group bg-white/5 hover:bg-white/10 backdrop-blur-xl rounded-[2rem] p-6 border border-white/10 transition-all duration-300">
+                      <div className="flex justify-between items-start mb-4">
+                          <div className="p-2 bg-rose-500/20 rounded-xl border border-rose-500/30 text-rose-400 group-hover:scale-110 transition-transform">
+                              <ArrowUpRight size={20} />
+                          </div>
+                          <span className="text-[10px] font-black text-rose-500/60 uppercase tracking-widest">Total Expense</span>
+                      </div>
+                      <p className="text-rose-400 text-xs font-bold mb-1 opacity-80">إجمالي المصروف</p>
+                      <p className="text-2xl font-black">{formatCurrency(totalExpense, settings.currency)}</p>
                   </div>
               </div>
           </div>
