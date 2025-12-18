@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useFinance } from '../context/FinanceContext';
 import { GoogleGenAI } from "@google/genai";
-import { Bot, Send, User, Loader2, RefreshCw, BrainCircuit } from 'lucide-react';
+import { Bot, Send, User, Loader2, RefreshCw, BrainCircuit, Key, ExternalLink, AlertCircle } from 'lucide-react';
 import { formatCurrency } from '../constants';
 
 interface Message {
@@ -15,11 +15,38 @@ const Advisor: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [hasKey, setHasKey] = useState<boolean | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // تحقق من حالة مفتاح الـ API عند التحميل
+  useEffect(() => {
+    const checkKeyStatus = async () => {
+      try {
+        if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
+          const selected = await window.aistudio.hasSelectedApiKey();
+          setHasKey(selected);
+        } else {
+          // إذا لم تكن الميزة متوفرة، نفترض وجود المفتاح في البيئة
+          setHasKey(!!process.env.API_KEY);
+        }
+      } catch (e) {
+        setHasKey(!!process.env.API_KEY);
+      }
+    };
+    checkKeyStatus();
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
+
+  const handleOpenKeyDialog = async () => {
+    if (window.aistudio && typeof window.aistudio.openSelectKey === 'function') {
+      await window.aistudio.openSelectKey();
+      // المضي قدماً بافتراض النجاح لتفادي Race Condition
+      setHasKey(true);
+    }
+  };
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || isLoading) return;
@@ -30,7 +57,7 @@ const Advisor: React.FC = () => {
     setIsLoading(true);
 
     try {
-        // تهيئة الـ AI باستخدام المفتاح من البيئة مباشرة
+        // إنشاء نسخة جديدة من GoogleGenAI لضمان استخدام أحدث مفتاح
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         
         const totalIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
@@ -38,18 +65,18 @@ const Advisor: React.FC = () => {
         const balance = totalIncome - totalExpense;
 
         const context = `
-          السياق المالي الحالي للمستخدم:
-          - الرصيد: ${formatCurrency(balance, settings.currency)}
-          - الدخل: ${formatCurrency(totalIncome, settings.currency)}
-          - المصروفات: ${formatCurrency(totalExpense, settings.currency)}
-          - العملة: ${settings.currency}
+          المعلومات المالية للمستخدم (العملة: ${settings.currency}):
+          - الرصيد الحالي: ${formatCurrency(balance, settings.currency)}
+          - إجمالي الدخل: ${formatCurrency(totalIncome, settings.currency)}
+          - إجمالي المصروفات: ${formatCurrency(totalExpense, settings.currency)}
+          - خطة الميزانية: ${budget.segments.map(s => `${s.name}: ${s.ratio}%`).join(', ')}
         `;
 
         const response = await ai.models.generateContent({
           model: 'gemini-3-flash-preview',
           contents: `${context}\n\nسؤال المستخدم: ${text}`,
           config: {
-            systemInstruction: 'أنت مستشار مالي محترف. قدم نصائح مالية دقيقة وودودة باللغة العربية بناءً على بيانات المستخدم المالية لمساعدته في إدارة أمواله بشكل أفضل. كن مختصراً وواضحاً.',
+            systemInstruction: 'أنت مستشار مالي ذكي وخبير في الاقتصاد الشخصي. وظيفتك هي تقديم نصائح عملية وودودة باللغة العربية بناءً على بيانات المستخدم المالية. كن دقيقاً ومختصراً في اقتراحاتك لمساعدة المستخدم في التوفير أو إدارة الديون.',
           }
         });
 
@@ -62,31 +89,79 @@ const Advisor: React.FC = () => {
         setMessages(prev => [...prev, reply]);
     } catch (error: any) {
         console.error("Advisor Error:", error);
+        let errorMessage = "عذراً، واجهت مشكلة في الاتصال بالذكاء الاصطناعي.";
+        
+        // التعامل مع خطأ المفتاح المفقود أو غير الصحيح
+        if (error.message?.includes("Requested entity was not found") || error.status === 404) {
+             setHasKey(false);
+             errorMessage = "يبدو أن هناك مشكلة في صلاحية مفتاح الـ API الخاص بك. يرجى إعادة ربطه.";
+        }
+
         setMessages(prev => [...prev, { 
             id: Date.now().toString(), 
             role: 'model', 
-            text: "عذراً، واجهت مشكلة في الاتصال بالذكاء الاصطناعي. تأكد من أن حسابك مفعل بشكل صحيح." 
+            text: errorMessage 
         }]);
     } finally {
         setIsLoading(false);
     }
   };
 
+  // شاشة ربط المفتاح إذا لم يكن مفعلاً
+  if (hasKey === false) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[70vh] max-w-2xl mx-auto px-6 text-center animate-fadeIn">
+        <div className="w-24 h-24 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center mb-8 animate-pulse shadow-inner">
+            <Key className="text-primary-600" size={40} />
+        </div>
+        <h2 className="text-2xl font-black mb-4 dark:text-white">تفعيل المستشار المالي</h2>
+        <p className="text-gray-500 dark:text-gray-400 mb-8 leading-relaxed max-w-md">
+            للحصول على نصائح مالية ذكية، يرجى ربط مفتاح API الخاص بك. يتطلب ذلك مشروعاً مفعلاً فيه الدفع (Paid GCP Project).
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 w-full">
+            <button 
+                onClick={handleOpenKeyDialog}
+                className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 rounded-2xl shadow-xl shadow-primary-500/20 transition-all flex items-center justify-center gap-2"
+            >
+                <Key size={20} />
+                <span>ربط مفتاح API</span>
+            </button>
+            <a 
+                href="https://ai.google.dev/gemini-api/docs/billing" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2"
+            >
+                <ExternalLink size={20} />
+                <span>وثائق الفوترة</span>
+            </a>
+        </div>
+        <div className="mt-8 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-900/30 flex gap-3 text-right">
+            <AlertCircle className="text-amber-600 shrink-0" size={20} />
+            <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
+                تنبيه: يجب اختيار مفتاح من مشروع GCP يحتوي على وسيلة دفع مفعلة لاستخدام نماذج Gemini 3 المتقدمة.
+            </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col h-[calc(100vh-10rem)] max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-2xl border dark:border-gray-700 overflow-hidden animate-fadeIn">
-        <div className="p-5 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-white/5 backdrop-blur-md">
+    <div className="flex flex-col h-[calc(100vh-10rem)] max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-2xl border dark:border-gray-700 overflow-hidden animate-fadeIn relative">
+        <div className="p-5 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-white/5 backdrop-blur-md z-10">
             <div className="flex items-center gap-3">
                 <div className="p-2.5 bg-primary-100 dark:bg-primary-900/30 rounded-xl shadow-inner">
                     <Bot className="text-primary-600" size={22} />
                 </div>
                 <div>
                     <h3 className="font-bold dark:text-white leading-none">المستشار المالي الذكي</h3>
-                    <p className="text-[10px] text-gray-500 mt-1 uppercase font-black tracking-widest">Powered by Gemini AI</p>
+                    <p className="text-[10px] text-gray-500 mt-1 uppercase font-black tracking-widest">Powered by Gemini 3 Flash</p>
                 </div>
             </div>
             <button 
               onClick={() => setMessages([])} 
               className="p-2.5 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors bg-gray-100 dark:bg-gray-700 rounded-xl"
+              title="مسح المحادثة"
             >
               <RefreshCw size={18} />
             </button>
@@ -95,11 +170,11 @@ const Advisor: React.FC = () => {
         <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50/30 dark:bg-gray-900/50 custom-scrollbar">
             {messages.length === 0 && (
                 <div className="h-full flex flex-col items-center justify-center text-gray-400 opacity-60">
-                    <div className="p-8 bg-white dark:bg-gray-800 rounded-[2rem] shadow-sm mb-6">
+                    <div className="p-8 bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-sm mb-6 animate-float">
                         <BrainCircuit size={80} className="text-primary-500" />
                     </div>
-                    <p className="font-black text-xl text-gray-900 dark:text-white">كيف يمكنني مساعدتك في أمورك المالية؟</p>
-                    <p className="text-sm mt-3 max-w-xs text-center leading-relaxed">اسألني عن ميزانيتك، أو اطلب نصيحة للتوفير، أو استفسر عن وضع ديونك.</p>
+                    <p className="font-black text-xl text-gray-900 dark:text-white">أهلاً بك! أنا مستشارك المالي</p>
+                    <p className="text-sm mt-3 max-w-xs text-center leading-relaxed font-medium">سأقوم بتحليل مصاريفك ودخلك لتقديم أفضل النصائح لك. كيف يمكنني مساعدتك اليوم؟</p>
                 </div>
             )}
             
@@ -125,8 +200,9 @@ const Advisor: React.FC = () => {
                     <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center text-white shrink-0 shadow-md">
                         <Bot size={20} />
                     </div>
-                    <div className="bg-white dark:bg-gray-700 p-5 rounded-3xl rounded-tl-none shadow-sm border border-gray-100 dark:border-gray-600">
-                        <Loader2 className="animate-spin text-primary-500" size={20} />
+                    <div className="bg-white dark:bg-gray-700 p-5 rounded-3xl rounded-tl-none shadow-sm border border-gray-100 dark:border-gray-600 flex items-center gap-3">
+                        <Loader2 className="animate-spin text-primary-500" size={18} />
+                        <span className="text-xs font-bold text-gray-400">جاري التفكير...</span>
                     </div>
                 </div>
               </div>
