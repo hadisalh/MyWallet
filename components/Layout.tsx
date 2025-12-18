@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { Bell, Moon, Sun, Wallet, Calendar } from 'lucide-react';
+import { Bell, Moon, Sun, Wallet, Calendar, Download } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { MENU_ITEMS } from '../constants';
 
@@ -9,6 +9,8 @@ export const Layout: React.FC = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [isInputFocused, setIsInputFocused] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
   const location = useLocation();
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -17,8 +19,31 @@ export const Layout: React.FC = () => {
     const timer = setTimeout(() => {
         setShowSplash(false);
     }, 3500); 
-    return () => clearTimeout(timer);
+
+    // منطق تثبيت التطبيق (PWA)
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
   }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setIsInstallable(false);
+    }
+    setDeferredPrompt(null);
+  };
 
   useEffect(() => {
     const handleFocusIn = (e: FocusEvent) => {
@@ -130,7 +155,16 @@ export const Layout: React.FC = () => {
           })}
         </nav>
         
-        <div className="p-5">
+        <div className="p-5 space-y-3">
+           {isInstallable && (
+             <button 
+               onClick={handleInstallClick}
+               className="w-full flex items-center gap-3 p-4 rounded-2xl bg-primary-600 text-white shadow-lg shadow-primary-500/30 hover:bg-primary-700 transition-all font-bold text-xs group"
+             >
+                <Download size={18} className="group-hover:bounce" />
+                <span>تثبيت محفظتي</span>
+             </button>
+           )}
            <div className="relative p-5 rounded-3xl bg-gradient-to-br from-gray-900 to-gray-800 text-white shadow-xl overflow-hidden group border border-white/10">
               <div className="absolute -right-6 -top-6 w-24 h-24 bg-primary-500/20 rounded-full blur-2xl group-hover:bg-primary-500/30 transition-colors"></div>
               <div className="flex items-center gap-3 relative z-10">
@@ -168,6 +202,15 @@ export const Layout: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2">
+                {isInstallable && (
+                   <button 
+                    onClick={handleInstallClick}
+                    className="lg:hidden w-9 h-9 rounded-xl flex items-center justify-center text-primary-600 bg-primary-50 dark:bg-primary-900/20 active:scale-95"
+                    title="تثبيت التطبيق"
+                   >
+                     <Download size={18} />
+                   </button>
+                )}
                 <button
                   onClick={() => updateSettings({ darkMode: !settings.darkMode })}
                   className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-primary-600 dark:hover:text-primary-400 transition-all active:scale-95"
@@ -272,6 +315,8 @@ export const Layout: React.FC = () => {
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes shimmer { 0% { transform: translateX(-150%) skewX(-12deg); } 100% { transform: translateX(150%) skewX(-12deg); } }
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        .group:hover .group-hover\:bounce { animation: bounce 1s infinite; }
         .animate-float { animation: float 6s ease-in-out infinite; }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
