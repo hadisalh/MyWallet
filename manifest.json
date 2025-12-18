@@ -22,14 +22,26 @@
       "purpose": "maskable"
     }
   ],
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "minimal-ui"],
   "theme_color": "#064e3b",
   "background_color": "#f8fafc",
-  "orientation": "portrait",
+  "orientation": "any",
   "dir": "rtl",
   "lang": "ar",
   "categories": ["finance", "productivity"],
-  "prefer_related_applications": false
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "إضافة عملية",
+      "url": "/#/",
+      "icons": [{ "src": "/icon.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "إدارة الديون",
+      "url": "/#/debts",
+      "icons": [{ "src": "/icon.png", "sizes": "192x192" }]
+    }
+  ]
 }

@@ -91,15 +91,15 @@ export interface Notification {
   type: 'warning' | 'info' | 'success';
 }
 
-// Moved AIStudio into the global scope and made the Window property required
-// to match the host environment's existing declarations and prevent type collision errors.
+// Fixed: Made the 'aistudio' property optional to resolve the "identical modifiers" error.
+// This ensures compatibility with the host environment's existing global declarations.
 declare global {
   interface AIStudio {
     hasSelectedApiKey: () => Promise<boolean>;
     openSelectKey: () => Promise<void>;
   }
   interface Window {
-    aistudio: AIStudio;
+    aistudio?: AIStudio;
   }
 }
 
