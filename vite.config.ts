@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: './', // يضمن أن جميع المسارات نسبية وتعمل بشكل صحيح في Vercel
+  base: '/', 
   build: {
     outDir: 'dist',
     emptyOutDir: true,

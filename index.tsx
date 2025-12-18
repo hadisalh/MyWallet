@@ -11,11 +11,11 @@ declare global {
 
 /**
  * تسجيل الـ Service Worker لتمكين ميزات الـ PWA (زر التثبيت)
- * النسخة الحالية تركز على استقرار التطبيق عبر الإنترنت
+ * يتم استخدام المسار المطلق لضمان العمل في جميع البيئات
  */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
+    navigator.serviceWorker.register('/sw.js')
       .then(reg => {
         console.log('Online PWA Active');
       })
