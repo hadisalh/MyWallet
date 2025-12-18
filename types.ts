@@ -1,5 +1,4 @@
 
-
 export type TransactionType = 'income' | 'expense';
 export type DebtType = 'i_owe' | 'owes_me';
 export type DebtStatus = 'paid' | 'partial' | 'unpaid';
@@ -96,11 +95,11 @@ export interface AIStudio {
   openSelectKey: () => Promise<void>;
 }
 
+// Fixed: Added optional modifier to aistudio property in Window augmentation 
+// to ensure compatibility with potential existing declarations in the host environment.
 declare global {
   interface Window {
-    // Removed optional modifier to ensure this declaration matches the internal platform definition,
-    // resolving the "Subsequent property declarations must have the same type" error.
-    aistudio: AIStudio;
+    aistudio?: AIStudio;
   }
 }
 
