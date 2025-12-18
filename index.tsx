@@ -9,31 +9,36 @@ declare global {
   }
 }
 
-// تسجيل الـ Service Worker لدعم الـ PWA
+/**
+ * تسجيل الـ Service Worker لدعم الـ PWA
+ * تم تحسين الكود ليكون أكثر مرونة مع البيئات المختلفة
+ */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
+    // نستخدم محاولة/خطأ لمنع تعطل التطبيق بالكامل في حال فشل تسجيل الـ Service Worker
     try {
-      // بناء رابط الـ Service Worker بشكل مطلق للتأكد من تطابق الـ Origin
-      // هذا يحل مشكلة محاولة التسجيل من دومين ai.studio في بعض المتصفحات
-      const swUrl = new URL('sw.js', window.location.href);
+      // نستخدم مساراً نسبياً بسيطاً وهو الخيار الأكثر أماناً وتوافقاً
+      const swPath = './sw.js';
       
-      navigator.serviceWorker.register(swUrl.href, { scope: './' })
+      navigator.serviceWorker.register(swPath, { scope: './' })
         .then(registration => {
-          console.log('SW registered successfully:', registration.scope);
+          console.log('Service Worker registered with scope:', registration.scope);
         })
         .catch(error => {
-          console.warn('SW registration failed:', error.message);
+          // تسجيل الخطأ كتحذير فقط لضمان استمرار عمل الواجهة الرئيسية
+          console.warn('Service Worker registration skipped:', error.message);
         });
     } catch (e) {
-      console.error('Error constructing SW URL:', e);
+      console.warn('Browser does not support Service Worker registration in this context.');
     }
   });
 }
 
-// التقاط حدث التثبيت فوراً
+// التقاط حدث التثبيت فوراً (لإظهار زر التثبيت لاحقاً)
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   window.deferredPrompt = e;
+  // إبلاغ المكونات بأن التطبيق جاهز للتثبيت
   window.dispatchEvent(new CustomEvent('pwa-installable', { detail: true }));
 });
 
