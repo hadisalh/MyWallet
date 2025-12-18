@@ -1,14 +1,14 @@
 
 
 export type TransactionType = 'income' | 'expense';
-export type DebtType = 'i_owe' | 'owes_me'; // debts on me vs debts to me
+export type DebtType = 'i_owe' | 'owes_me';
 export type DebtStatus = 'paid' | 'partial' | 'unpaid';
 export type RecurringFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 export interface Category {
   id: string;
   label: string;
-  iconName: string; // Storing string name to map to Lucide icons
+  iconName: string;
   color: string;
   bg: string;
   text: string;
@@ -20,7 +20,7 @@ export interface Transaction {
   amount: number;
   type: TransactionType;
   category: string;
-  date: string; // ISO string
+  date: string;
   notes?: string;
   isRecurring?: boolean;
 }
@@ -41,8 +41,8 @@ export interface DebtItem {
   id: string;
   amount: number;
   paidAmount: number;
-  date: string; // ISO String: Creation/Recording Date
-  dueDate: string; // ISO String: Deadline
+  date: string;
+  dueDate: string;
   status: DebtStatus;
   notes?: string;
 }
@@ -64,7 +64,6 @@ export interface Goal {
   color: string;
 }
 
-// New Dynamic Budget Structure
 export interface BudgetSegment {
   id: string;
   name: string;
@@ -92,21 +91,24 @@ export interface Notification {
   type: 'warning' | 'info' | 'success';
 }
 
-// تعريفات عالمية لمنع أخطاء TypeScript في بيئة Vercel و Vite
-declare global {
-  // Define AIStudio interface to match external environment declarations
-  interface AIStudio {
-    hasSelectedApiKey(): Promise<boolean>;
-    openSelectKey(): Promise<void>;
-  }
+// Define the AIStudio interface to match the environment's requirements
+export interface AIStudio {
+  hasSelectedApiKey: () => Promise<boolean>;
+  openSelectKey: () => Promise<void>;
+}
 
+// Global augmentation for TypeScript
+declare global {
   interface Window {
-    // Property must match the environmental 'AIStudio' type and modifiers (typically readonly)
-    readonly aistudio: AIStudio;
+    // Fixed: Property 'aistudio' must be of type 'AIStudio' to match global declarations
+    aistudio?: AIStudio;
   }
+  
   namespace NodeJS {
     interface ProcessEnv {
       API_KEY: string;
     }
   }
 }
+
+export {};

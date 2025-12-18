@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useFinance } from '../context/FinanceContext';
 import { GoogleGenAI } from "@google/genai";
@@ -18,20 +19,18 @@ const Advisor: React.FC = () => {
   const [hasKey, setHasKey] = useState<boolean | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // تحقق من حالة مفتاح الـ API عند التحميل
   useEffect(() => {
     const checkKeyStatus = async () => {
       try {
-        const win = window as any;
-        if (win.aistudio && typeof win.aistudio.hasSelectedApiKey === 'function') {
-          const selected = await win.aistudio.hasSelectedApiKey();
+        if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
+          const selected = await window.aistudio.hasSelectedApiKey();
           setHasKey(selected);
         } else {
-          // إذا لم تكن الميزة متوفرة، نفترض وجود المفتاح في البيئة
-          setHasKey(!!(process as any).env.API_KEY);
+          // Fallback to env variable if not in AI Studio environment
+          setHasKey(!!process.env.API_KEY);
         }
       } catch (e) {
-        setHasKey(!!(process as any).env.API_KEY);
+        setHasKey(!!process.env.API_KEY);
       }
     };
     checkKeyStatus();
@@ -42,10 +41,8 @@ const Advisor: React.FC = () => {
   }, [messages, isLoading]);
 
   const handleOpenKeyDialog = async () => {
-    const win = window as any;
-    if (win.aistudio && typeof win.aistudio.openSelectKey === 'function') {
-      await win.aistudio.openSelectKey();
-      // المضي قدماً بافتراض النجاح لتفادي Race Condition
+    if (window.aistudio && typeof window.aistudio.openSelectKey === 'function') {
+      await window.aistudio.openSelectKey();
       setHasKey(true);
     }
   };
@@ -59,8 +56,8 @@ const Advisor: React.FC = () => {
     setIsLoading(true);
 
     try {
-        // إنشاء نسخة جديدة من GoogleGenAI لضمان استخدام أحدث مفتاح
-        const ai = new GoogleGenAI({ apiKey: (process as any).env.API_KEY });
+        // Initialize with process.env.API_KEY directly as required
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         
         const totalIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
         const totalExpense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
@@ -93,7 +90,6 @@ const Advisor: React.FC = () => {
         console.error("Advisor Error:", error);
         let errorMessage = "عذراً، واجهت مشكلة في الاتصال بالذكاء الاصطناعي.";
         
-        // التعامل مع خطأ المفتاح المفقود أو غير الصحيح
         if (error.message?.includes("Requested entity was not found") || error.status === 404) {
              setHasKey(false);
              errorMessage = "يبدو أن هناك مشكلة في صلاحية مفتاح الـ API الخاص بك. يرجى إعادة ربطه.";
@@ -109,7 +105,6 @@ const Advisor: React.FC = () => {
     }
   };
 
-  // شاشة ربط المفتاح إذا لم يكن مفعلاً
   if (hasKey === false) {
     return (
       <div className="flex flex-col items-center justify-center h-[70vh] max-w-2xl mx-auto px-6 text-center animate-fadeIn">
@@ -118,7 +113,7 @@ const Advisor: React.FC = () => {
         </div>
         <h2 className="text-2xl font-black mb-4 dark:text-white">تفعيل المستشار المالي</h2>
         <p className="text-gray-500 dark:text-gray-400 mb-8 leading-relaxed max-w-md">
-            للحصول على نصائح مالية ذكية، يرجى ربط مفتاح API الخاص بك. يتطلب ذلك مشروعاً مفعلاً فيه الدفع (Paid GCP Project).
+            للحصول على نصائح مالية ذكية، يرجى ربط مفتاح API الخاص بك. يتطلب ذلك مشروعاً مفعلاً فيه الدفع.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 w-full">
             <button 
@@ -137,12 +132,6 @@ const Advisor: React.FC = () => {
                 <ExternalLink size={20} />
                 <span>وثائق الفوترة</span>
             </a>
-        </div>
-        <div className="mt-8 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-900/30 flex gap-3 text-right">
-            <AlertCircle className="text-amber-600 shrink-0" size={20} />
-            <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
-                تنبيه: يجب اختيار مفتاح من مشروع GCP يحتوي على وسيلة دفع مفعلة لاستخدام نماذج Gemini 3 المتقدمة.
-            </p>
         </div>
       </div>
     );
@@ -176,7 +165,7 @@ const Advisor: React.FC = () => {
                         <BrainCircuit size={80} className="text-primary-500" />
                     </div>
                     <p className="font-black text-xl text-gray-900 dark:text-white">أهلاً بك! أنا مستشارك المالي</p>
-                    <p className="text-sm mt-3 max-w-xs text-center leading-relaxed font-medium">سأقوم بتحليل مصاريفك ودخلك لتقديم أفضل النصائح لك. كيف يمكنني مساعدتك اليوم؟</p>
+                    <p className="text-sm mt-3 max-w-xs text-center leading-relaxed font-medium">سأقوم بتحليل مصاريفك ودخلك لتقديم أفضل النصائح لك.</p>
                 </div>
             )}
             
