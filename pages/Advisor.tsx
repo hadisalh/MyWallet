@@ -30,10 +30,12 @@ const Advisor: React.FC = () => {
     setIsLoading(true);
 
     try {
-        // الوصول للمفتاح مباشرة من بيئة العمل. سيقوم Vite باستبدال هذا النص بالقيمة الحقيقية أثناء البناء.
-        const apiKey = process.env.API_KEY;
+        // محاولة الحصول على المفتاح من مصادر متعددة للأمان
+        const apiKey = process.env.API_KEY || (window as any).process?.env?.API_KEY;
         
-        if (!apiKey) throw new Error("API_KEY_MISSING");
+        if (!apiKey) {
+            throw new Error("API_KEY_MISSING");
+        }
 
         const ai = new GoogleGenAI({ apiKey });
         const totalIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
@@ -57,9 +59,13 @@ const Advisor: React.FC = () => {
     } catch (error: any) {
         console.error("Advisor Error:", error);
         let errorText = "حدث خطأ أثناء الاتصال بالمستشار الذكي.";
+        
         if (error.message === "API_KEY_MISSING") {
-          errorText = "يرجى إعداد مفتاح API الخاص بـ Gemini في إعدادات Vercel (Environment Variables) باسم API_KEY.";
+          errorText = "يرجى إعداد مفتاح API الخاص بـ Gemini في إعدادات البيئة (Environment Variables) باسم API_KEY.";
+        } else if (error.status === 403) {
+          errorText = "مفتاح API غير صالح أو ليس لديه صلاحيات كافية.";
         }
+        
         setMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: errorText }]);
     } finally {
         setIsLoading(false);
@@ -67,8 +73,8 @@ const Advisor: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-10rem)] max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-[2rem] shadow-xl border dark:border-gray-700 overflow-hidden">
-        <div className="p-4 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-white/5">
+    <div className="flex flex-col h-[calc(100vh-10rem)] max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-[2rem] shadow-xl border dark:border-gray-700 overflow-hidden animate-fadeIn">
+        <div className="p-4 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-white/5 backdrop-blur-md">
             <div className="flex items-center gap-3">
                 <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
                     <Bot className="text-primary-600" size={20} />

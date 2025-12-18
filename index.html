@@ -8,8 +8,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="محفظتي" />
-    <link rel="apple-touch-icon" href="/icon.png" />
-    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/icon.png?v=2" />
+    <link rel="icon" type="image/png" href="/icon.png?v=2" />
+    <link rel="manifest" href="/manifest.json?v=2" />
     <title>محفظتي - إدارة الأموال الاحترافية</title>
     
     <script>
@@ -40,6 +41,9 @@
       .custom-scrollbar::-webkit-scrollbar { width: 4px; }
       .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
       .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; }
+      /* Basic fade-in animation for page transitions */
+      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+      .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
     </style>
     <script type="importmap">
 {
@@ -47,7 +51,7 @@
     "react": "https://esm.sh/react@19.0.0",
     "react-dom": "https://esm.sh/react-dom@19.0.0",
     "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
-    "react-router-dom": "https://esm.sh/react-router-dom@7.1.1?deps=react@19.0.0",
+    "react-router-dom": "https://esm.sh/react-router-dom@6.28.0?deps=react@19.0.0",
     "lucide-react": "https://esm.sh/lucide-react@0.460.0?deps=react@19.0.0",
     "recharts": "https://esm.sh/recharts@2.15.0?deps=react@19.0.0,react-dom@19.0.0",
     "date-fns": "https://esm.sh/date-fns@4.1.0",
