@@ -1,7 +1,7 @@
 {
   "short_name": "محفظتي",
   "name": "محفظتي - هادي الدليمي",
-  "id": "com.hadi.mywallet",
+  "id": "com.hadi.mywallet.v2",
   "description": "تطبيق احترافي لإدارة الأموال الشخصية والديون، مطور بواسطة هادي الدليمي.",
   "icons": [
     {
@@ -23,22 +23,12 @@
       "purpose": "maskable"
     }
   ],
-  "start_url": "./index.html",
+  "start_url": "index.html",
   "scope": "./",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "minimal-ui"],
-  "theme_color": "#10b981",
   "background_color": "#ffffff",
+  "theme_color": "#10b981",
   "orientation": "portrait",
   "dir": "rtl",
-  "lang": "ar",
-  "categories": ["finance", "productivity"],
-  "prefer_related_applications": false,
-  "shortcuts": [
-    {
-      "name": "إضافة عملية",
-      "url": "./#/",
-      "icons": [{ "src": "./icon.png", "sizes": "192x192" }]
-    }
-  ]
+  "lang": "ar"
 }

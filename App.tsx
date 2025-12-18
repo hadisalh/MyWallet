@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { HashRouter, Routes, Route, useNavigate, Navigate, useLocation } from 'react-router-dom';
+import React from 'react';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { FinanceProvider } from './context/FinanceContext';
 import { Layout } from './components/Layout';
 import Dashboard from './pages/Dashboard';
@@ -11,31 +11,10 @@ import Advisor from './pages/Advisor';
 import Recurring from './pages/Recurring';
 import CalendarView from './pages/CalendarView';
 
-// Component to handle initial redirect to home ONLY ONCE
-const ForceHome: React.FC = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const hasRedirected = useRef(false);
-  
-  useEffect(() => {
-    // Check if we haven't redirected yet
-    if (!hasRedirected.current) {
-        hasRedirected.current = true;
-        // Only redirect if we are not already at the root
-        if (location.pathname !== '/') {
-            navigate('/', { replace: true });
-        }
-    }
-  }, [navigate, location]);
-
-  return null;
-};
-
 const App: React.FC = () => {
   return (
     <FinanceProvider>
       <HashRouter>
-        <ForceHome />
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Dashboard />} />
@@ -46,7 +25,6 @@ const App: React.FC = () => {
             <Route path="goals" element={<Goals />} />
             <Route path="advisor" element={<Advisor />} />
             <Route path="settings" element={<Settings />} />
-            {/* Catch-all route to redirect any unknown paths to home */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>

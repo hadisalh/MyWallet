@@ -12,30 +12,21 @@ declare global {
 // تسجيل الـ Service Worker لدعم الـ PWA
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    // استخدام مسار نسبي لضمان التوافق مع جميع الاستضافات
-    navigator.serviceWorker.register('./sw.js', { scope: './' })
+    navigator.serviceWorker.register('./sw.js')
       .then(registration => {
-        console.log('PWA: تم تسجيل الـ Service Worker بنجاح:', registration.scope);
+        console.log('SW registered:', registration.scope);
       })
       .catch(error => {
-        console.warn('PWA: فشل تسجيل الـ Service Worker. قد لا يعمل التثبيت التلقائي.', error.message);
+        console.error('SW registration failed:', error);
       });
   });
 }
 
 // التقاط حدث التثبيت فوراً
 window.addEventListener('beforeinstallprompt', (e) => {
-  // منع المتصفح من إظهار النافذة التلقائية البسيطة
   e.preventDefault();
-  // تخزين الحدث لاستخدامه في واجهتنا المخصصة
   window.deferredPrompt = e;
-  // إرسال حدث مخصص لإبلاغ الواجهة بوجود إمكانية للتثبيت
   window.dispatchEvent(new CustomEvent('pwa-installable', { detail: true }));
-});
-
-window.addEventListener('appinstalled', () => {
-  window.deferredPrompt = null;
-  console.log('PWA: تم تثبيت التطبيق بنجاح');
 });
 
 const container = document.getElementById('root');
