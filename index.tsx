@@ -12,13 +12,21 @@ declare global {
 // تسجيل الـ Service Worker لدعم الـ PWA
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .then(registration => {
-        console.log('SW registered:', registration.scope);
-      })
-      .catch(error => {
-        console.error('SW registration failed:', error);
-      });
+    try {
+      // بناء رابط الـ Service Worker بشكل مطلق للتأكد من تطابق الـ Origin
+      // هذا يحل مشكلة محاولة التسجيل من دومين ai.studio في بعض المتصفحات
+      const swUrl = new URL('sw.js', window.location.href);
+      
+      navigator.serviceWorker.register(swUrl.href, { scope: './' })
+        .then(registration => {
+          console.log('SW registered successfully:', registration.scope);
+        })
+        .catch(error => {
+          console.warn('SW registration failed:', error.message);
+        });
+    } catch (e) {
+      console.error('Error constructing SW URL:', e);
+    }
   });
 }
 
