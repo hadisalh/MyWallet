@@ -96,20 +96,20 @@ const Dashboard: React.FC = () => {
             <h2 className="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-2">
                 {getTimeGreeting()} 👋
             </h2>
-            <p className="text-gray-500 text-sm font-medium">إليك ملخص محفظتك لهذا اليوم</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">إليك ملخص محفظتك لهذا اليوم</p>
         </div>
         
         <div className="flex items-center gap-3 w-full md:w-auto">
             <div className="bg-white dark:bg-gray-800 p-1.5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-1 md:flex-none">
                 <button 
                     onClick={() => setFilter('month')} 
-                    className={`flex-1 px-4 py-2 rounded-xl text-xs font-black transition-all ${filter === 'month' ? 'bg-primary-600 text-white shadow-lg' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}
+                    className={`flex-1 px-4 py-2 rounded-xl text-xs font-black transition-all ${filter === 'month' ? 'bg-primary-600 text-white shadow-lg' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'}`}
                 >
                     هذا الشهر
                 </button>
                 <button 
                     onClick={() => setFilter('all')} 
-                    className={`flex-1 px-4 py-2 rounded-xl text-xs font-black transition-all ${filter === 'all' ? 'bg-primary-600 text-white shadow-lg' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'}`}
+                    className={`flex-1 px-4 py-2 rounded-xl text-xs font-black transition-all ${filter === 'all' ? 'bg-primary-600 text-white shadow-lg' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'}`}
                 >
                     الكل
                 </button>
@@ -252,8 +252,8 @@ const Dashboard: React.FC = () => {
                                               <Icon size={18} />
                                           </div>
                                           <div>
-                                              <p className="font-black text-xs dark:text-white leading-none mb-1">{t.category}</p>
-                                              <p className="text-[10px] text-gray-500 font-medium">{formatDate(t.date)}</p>
+                                              <p className="font-black text-xs text-gray-900 dark:text-white leading-none mb-1">{t.category}</p>
+                                              <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">{formatDate(t.date)}</p>
                                           </div>
                                       </div>
                                       <div className="flex flex-col items-end gap-1">
@@ -273,12 +273,12 @@ const Dashboard: React.FC = () => {
           </div>
       </div>
 
-      {/* Transaction Modal (Same logic, slightly polished) */}
+      {/* Transaction Modal (Fixed Text Contrast) */}
       <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="إضافة عملية جديدة">
           <form onSubmit={handleSubmit} className="space-y-6 p-1">
               <div className="flex bg-gray-100 dark:bg-gray-700 p-1.5 rounded-2xl">
-                  <button type="button" onClick={() => setType('income')} className={`flex-1 py-3 rounded-xl text-sm font-black transition-all ${type === 'income' ? 'bg-white dark:bg-gray-600 text-emerald-600 shadow-sm' : 'text-gray-500'}`}>دخل</button>
-                  <button type="button" onClick={() => setType('expense')} className={`flex-1 py-3 rounded-xl text-sm font-black transition-all ${type === 'expense' ? 'bg-white dark:bg-gray-600 text-rose-600 shadow-sm' : 'text-gray-500'}`}>مصروف</button>
+                  <button type="button" onClick={() => setType('income')} className={`flex-1 py-3 rounded-xl text-sm font-black transition-all ${type === 'income' ? 'bg-white dark:bg-gray-600 text-emerald-600 shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}>دخل</button>
+                  <button type="button" onClick={() => setType('expense')} className={`flex-1 py-3 rounded-xl text-sm font-black transition-all ${type === 'expense' ? 'bg-white dark:bg-gray-600 text-rose-600 shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}>مصروف</button>
               </div>
 
               <div className="relative group">
@@ -288,7 +288,7 @@ const Dashboard: React.FC = () => {
                     value={amount} 
                     onChange={e => setAmount(e.target.value)} 
                     placeholder="0.00" 
-                    className="w-full text-5xl font-black text-center py-8 bg-transparent outline-none dark:text-white border-b-2 border-gray-100 dark:border-gray-700 focus:border-primary-500 transition-colors" 
+                    className="w-full text-5xl font-black text-center py-8 bg-transparent outline-none text-gray-900 dark:text-white border-b-2 border-gray-100 dark:border-gray-700 focus:border-primary-500 transition-colors" 
                   />
                   <span className="absolute left-0 bottom-8 text-gray-400 font-black text-sm uppercase tracking-tighter">{settings.currency}</span>
               </div>
@@ -315,7 +315,7 @@ const Dashboard: React.FC = () => {
                                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isSelected ? 'bg-primary-500 text-white' : 'bg-white dark:bg-gray-700 text-gray-400 shadow-inner'}`} style={isSelected ? { backgroundColor: cat.color } : {}}>
                                         <Icon size={18} />
                                     </div>
-                                    <span className={`text-[10px] font-black text-center truncate w-full ${isSelected ? 'text-primary-700 dark:text-primary-300' : 'text-gray-500'}`}>{cat.label}</span>
+                                    <span className={`text-[10px] font-black text-center truncate w-full ${isSelected ? 'text-primary-700 dark:text-primary-300' : 'text-gray-600 dark:text-gray-400'}`}>{cat.label}</span>
                                 </button>
                             );
                         })
@@ -328,13 +328,13 @@ const Dashboard: React.FC = () => {
                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1 flex items-center gap-2">
                         <Calendar size={14} /> تاريخ العملية
                       </label>
-                      <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full p-4 rounded-2xl border border-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white outline-none focus:border-primary-500 transition-all text-sm font-bold shadow-sm" />
+                      <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full p-4 rounded-2xl border border-gray-100 dark:border-gray-700 dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:border-primary-500 transition-all text-sm font-bold shadow-sm" />
                   </div>
                   <div className="space-y-2">
                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1 flex items-center gap-2">
                         <AlertCircle size={14} /> ملاحظات
                       </label>
-                      <input type="text" value={notes} onChange={e => setNotes(e.target.value)} placeholder="مثلاً: غداء عمل" className="w-full p-4 rounded-2xl border border-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white outline-none focus:border-primary-500 transition-all text-sm font-bold shadow-sm" />
+                      <input type="text" value={notes} onChange={e => setNotes(e.target.value)} placeholder="مثلاً: غداء عمل" className="w-full p-4 rounded-2xl border border-gray-100 dark:border-gray-700 dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:border-primary-500 transition-all text-sm font-bold shadow-sm" />
                   </div>
               </div>
 
@@ -345,8 +345,8 @@ const Dashboard: React.FC = () => {
                             <Repeat size={18} />
                           </div>
                           <div>
-                            <p className="text-sm font-black dark:text-white leading-none mb-1">تفعيل التكرار</p>
-                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tight">جدولة العملية تلقائياً</p>
+                            <p className="text-sm font-black text-gray-900 dark:text-white leading-none mb-1">تفعيل التكرار</p>
+                            <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-tight">جدولة العملية تلقائياً</p>
                           </div>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
@@ -365,7 +365,7 @@ const Dashboard: React.FC = () => {
                                   className={`py-2 rounded-xl text-[10px] font-black border-2 transition-all ${
                                       frequency === freq 
                                       ? 'bg-primary-600 border-primary-600 text-white shadow-lg' 
-                                      : 'bg-white dark:bg-gray-700 border-gray-100 dark:border-gray-600 text-gray-400'
+                                      : 'bg-white dark:bg-gray-700 border-gray-100 dark:border-gray-600 text-gray-500 dark:text-gray-400'
                                   }`}
                               >
                                   {freq === 'daily' ? 'يومياً' : freq === 'weekly' ? 'أسبوعياً' : freq === 'monthly' ? 'شهرياً' : 'سنوياً'}

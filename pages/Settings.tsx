@@ -52,7 +52,7 @@ const Settings: React.FC = () => {
                   </div>
                   <div>
                       <h3 className="font-bold text-lg text-gray-900 dark:text-white">إدارة التصنيفات</h3>
-                      <p className="text-xs text-gray-500">تخصيص تصنيفات المصاريف والدخل</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">تخصيص تصنيفات المصاريف والدخل</p>
                   </div>
               </div>
               <button 
@@ -72,10 +72,10 @@ const Settings: React.FC = () => {
                               <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: cat.color + '20', color: cat.color }}>
                                   <Icon size={14} />
                               </div>
-                              <span className="text-xs font-bold truncate dark:text-gray-300">{cat.label}</span>
+                              <span className="text-xs font-bold truncate text-gray-900 dark:text-gray-200">{cat.label}</span>
                           </div>
                           {cat.isCustom && (
-                              <button onClick={() => deleteCategory(cat.id)} className="text-gray-400 hover:text-red-500">
+                              <button onClick={() => deleteCategory(cat.id)} className="text-gray-400 hover:text-red-500 transition-colors">
                                   <Trash2 size={12} />
                               </button>
                           )}
@@ -98,7 +98,7 @@ const Settings: React.FC = () => {
                 </div>
                 <div>
                   <p className="font-semibold text-gray-900 dark:text-white">الوضع الليلي</p>
-                  <p className="text-xs text-gray-500">تبديل بين المظهر الفاتح والداكن</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">تبديل بين المظهر الفاتح والداكن</p>
                 </div>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
@@ -119,7 +119,7 @@ const Settings: React.FC = () => {
                  </div>
                  <div>
                     <p className="font-semibold text-gray-900 dark:text-white">العملة الرئيسية</p>
-                    <p className="text-xs text-gray-500">اختر العملة المستخدمة في التطبيق</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">اختر العملة المستخدمة في التطبيق</p>
                  </div>
                </div>
                <select 
@@ -143,7 +143,7 @@ const Settings: React.FC = () => {
                 </div>
                 <div>
                   <p className="font-semibold text-gray-900 dark:text-white">تفعيل التنبيهات</p>
-                  <p className="text-xs text-gray-500">تنبيهات الديون وتجاوز الميزانية</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">تنبيهات الديون وتجاوز الميزانية</p>
                 </div>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
@@ -168,7 +168,7 @@ const Settings: React.FC = () => {
                     </div>
                     <div>
                         <p className="font-semibold text-gray-900 dark:text-white">النسخ الاحتياطي</p>
-                        <p className="text-xs text-gray-500">حفظ بياناتك أو نقلها لجهاز آخر</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">حفظ بياناتك أو نقلها لجهاز آخر</p>
                     </div>
                </div>
                
@@ -202,16 +202,16 @@ const Settings: React.FC = () => {
       <Modal isOpen={isCatModalOpen} onClose={() => setIsCatModalOpen(false)} title="إضافة تصنيف جديد">
           <form onSubmit={handleAddCategory} className="space-y-6">
               <div>
-                  <label className="block text-sm font-bold mb-2 dark:text-white">اسم التصنيف</label>
-                  <input required value={catName} onChange={e => setCatName(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white" placeholder="مثال: ألعاب فيديو" />
+                  <label className="block text-sm font-bold mb-2 text-gray-900 dark:text-white">اسم التصنيف</label>
+                  <input required value={catName} onChange={e => setCatName(e.target.value)} className="w-full p-4 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="مثال: ألعاب فيديو" />
               </div>
               <div>
-                  <label className="block text-sm font-bold mb-2 dark:text-white">الأيقونة</label>
+                  <label className="block text-sm font-bold mb-2 text-gray-900 dark:text-white">الأيقونة</label>
                   <div className="grid grid-cols-6 gap-2">
                       {Object.keys(ICON_MAP).slice(0, 12).map(iconName => {
                           const Icon = ICON_MAP[iconName];
                           return (
-                              <button key={iconName} type="button" onClick={() => setCatIcon(iconName)} className={`p-2 rounded-lg flex items-center justify-center border ${catIcon === iconName ? 'bg-primary-50 border-primary-500 text-primary-600' : 'border-gray-200 dark:border-gray-600 dark:text-gray-300'}`}>
+                              <button key={iconName} type="button" onClick={() => setCatIcon(iconName)} className={`p-2 rounded-lg flex items-center justify-center border transition-all ${catIcon === iconName ? 'bg-primary-50 border-primary-500 text-primary-600 ring-2 ring-primary-500/20' : 'border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-400'}`}>
                                   <Icon size={20} />
                               </button>
                           )
@@ -219,20 +219,20 @@ const Settings: React.FC = () => {
                   </div>
               </div>
               <div>
-                  <label className="block text-sm font-bold mb-2 dark:text-white">اللون</label>
-                  <div className="flex gap-2">
+                  <label className="block text-sm font-bold mb-2 text-gray-900 dark:text-white">اللون</label>
+                  <div className="flex gap-2 flex-wrap">
                       {['#ef4444', '#f97316', '#f59e0b', '#10b981', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'].map(color => (
-                          <button key={color} type="button" onClick={() => setCatColor(color)} style={{ backgroundColor: color }} className={`w-8 h-8 rounded-full ${catColor === color ? 'ring-2 ring-offset-2 ring-gray-400' : ''}`} />
+                          <button key={color} type="button" onClick={() => setCatColor(color)} style={{ backgroundColor: color }} className={`w-8 h-8 rounded-full transition-all ${catColor === color ? 'ring-2 ring-offset-2 ring-gray-400 scale-110' : 'opacity-70 hover:opacity-100'}`} />
                       ))}
                   </div>
               </div>
-              <button type="submit" className="w-full bg-primary-600 text-white font-bold py-3 rounded-xl">حفظ</button>
+              <button type="submit" className="w-full bg-primary-600 text-white font-black py-4 rounded-xl shadow-lg shadow-primary-500/20 transition-all hover:bg-primary-700 active:scale-95">حفظ التصنيف</button>
           </form>
       </Modal>
 
-      <div className="text-center text-gray-400 text-xs">
-        <p>الإصدار 2.0.0 (Pro)</p>
-        <p className="mt-1">تم التطوير بواسطة React & Tailwind</p>
+      <div className="text-center text-gray-400 text-[10px] font-black uppercase tracking-widest pb-10">
+        <p>الإصدار 2.5.0 (Pro)</p>
+        <p className="mt-1">تم التطوير بواسطة أ. هادي الدليمي</p>
       </div>
     </div>
   );
