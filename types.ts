@@ -1,4 +1,5 @@
 
+
 export type TransactionType = 'income' | 'expense';
 export type DebtType = 'i_owe' | 'owes_me';
 export type DebtStatus = 'paid' | 'partial' | 'unpaid';
@@ -90,16 +91,15 @@ export interface Notification {
   type: 'warning' | 'info' | 'success';
 }
 
-export interface AIStudio {
-  hasSelectedApiKey: () => Promise<boolean>;
-  openSelectKey: () => Promise<void>;
-}
-
-// Fixed: Added optional modifier to aistudio property in Window augmentation 
-// to ensure compatibility with potential existing declarations in the host environment.
+// Moved AIStudio into the global scope and made the Window property required
+// to match the host environment's existing declarations and prevent type collision errors.
 declare global {
+  interface AIStudio {
+    hasSelectedApiKey: () => Promise<boolean>;
+    openSelectKey: () => Promise<void>;
+  }
   interface Window {
-    aistudio?: AIStudio;
+    aistudio: AIStudio;
   }
 }
 
