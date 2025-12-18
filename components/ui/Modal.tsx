@@ -14,7 +14,6 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
 
   useEffect(() => {
     setMounted(true);
-    // Prevent body scrolling when modal is open
     if (isOpen) {
       document.body.style.overflow = 'hidden';
     } else {
@@ -27,32 +26,30 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
 
   if (!isOpen || !mounted) return null;
 
-  // Use createPortal to render the modal outside the root DOM hierarchy
-  // This solves z-index and stacking context issues with the bottom navbar
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center sm:p-4">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity animate-[fadeIn_0.2s_ease-out]" 
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" 
         onClick={onClose}
       />
       
-      {/* Modal Content */}
-      <div className="relative bg-white dark:bg-gray-900 w-full sm:w-full max-w-lg shadow-2xl transform transition-all flex flex-col max-h-[85vh] sm:rounded-3xl rounded-t-[2rem] overflow-hidden animate-[slideUp_0.3s_cubic-bezier(0.16,1,0.3,1)]">
+      {/* Modal Content - Extreme Contrast Fix */}
+      <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg shadow-2xl transform transition-all flex flex-col max-h-[90vh] sm:rounded-3xl rounded-t-3xl overflow-hidden border border-slate-200 dark:border-slate-700 animate-[slideUp_0.2s_ease-out]">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 z-10 bg-white dark:bg-gray-900 shrink-0">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h3>
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
+          <h3 className="text-xl font-black text-slate-950 dark:text-white">{title}</h3>
           <button 
             onClick={onClose}
-            className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 transition-colors"
+            className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
           >
-            <X size={20} />
+            <X size={20} strokeWidth={3} />
           </button>
         </div>
 
-        {/* Scrollable Body - with safe area padding for mobile */}
-        <div className="p-6 overflow-y-auto custom-scrollbar pb-10 sm:pb-6">
+        {/* Body - Explicit Text Colors */}
+        <div className="p-6 overflow-y-auto custom-scrollbar bg-white dark:bg-slate-900 text-slate-950 dark:text-white">
           {children}
         </div>
       </div>
