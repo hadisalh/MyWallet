@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useFinance } from '../context/FinanceContext';
 import { formatCurrency, formatDate, ICON_MAP } from '../constants';
-import { ArrowDownLeft, ArrowUpRight, Plus, Trash2, Smartphone, Download, AlertCircle } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Plus, Trash2, Smartphone, Download, AlertCircle, Apple } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid, PieChart, Pie } from 'recharts';
 import { Modal } from '../components/ui/Modal';
 import { TransactionType, RecurringFrequency, Category } from '../types';
@@ -12,6 +12,7 @@ const Dashboard: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [filter, setFilter] = useState<'all' | 'month'>('all');
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
 
   // Form State
   const [amount, setAmount] = useState('');
@@ -24,15 +25,17 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+    const isIphone = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    setIsIOS(isIphone);
+
     if (!isPWA) {
       const timer = setTimeout(() => setShowInstallPrompt(true), 3000);
       return () => clearTimeout(timer);
     }
   }, []);
 
-  // Update category when type changes to ensure logical selection
   useEffect(() => {
-    const filtered = categories.filter(c => type === 'income' ? c.id === 'salary' : c.id !== 'salary');
+    const filtered = categories.filter(c => type === 'income' ? (c.id === 'salary' || c.id === 'gift' || c.id === 'other') : c.id !== 'salary');
     if (filtered.length > 0) setSelectedCategory(filtered[0]);
   }, [type, categories]);
 
@@ -71,6 +74,16 @@ const Dashboard: React.FC = () => {
         .sort((a: any, b: any) => b.value - a.value);
   }, [filteredTransactions, categories]);
 
+  const handleInstallClick = async () => {
+    const promptEvent = window.deferredPrompt;
+    if (promptEvent) {
+        promptEvent.prompt();
+    } else {
+        // إذا لم يكن هناك حدث، نعطي إشعاراً للمستخدم
+        alert(isIOS ? 'استخدم زر المشاركة في متصفح Safari لإضافة التطبيق للشاشة الرئيسية.' : 'ابحث عن خيار التثبيت في قائمة المتصفح.');
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount) return;
@@ -89,19 +102,19 @@ const Dashboard: React.FC = () => {
     <div className="space-y-6 max-w-7xl mx-auto p-4 md:p-0">
       
       {showInstallPrompt && (
-        <div className="bg-gradient-to-r from-primary-600 to-primary-800 rounded-3xl p-6 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-4 animate-fadeIn">
+        <div className="bg-gradient-to-r from-gray-900 to-gray-800 dark:from-primary-600 dark:to-primary-800 rounded-3xl p-6 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-4 animate-fadeIn border border-white/10">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shrink-0">
-               <Smartphone size={32} />
+               {isIOS ? <Apple size={32} /> : <Smartphone size={32} />}
             </div>
             <div>
                <h4 className="text-xl font-black">ثبّت "محفظتي" الآن!</h4>
-               <p className="text-primary-100 text-sm opacity-90">احصل على تجربة أسرع، وصول فوري، وعمل بدون إنترنت.</p>
+               <p className="text-white/70 text-sm">احصل على تجربة أسرع، وصول فوري، وعمل بدون إنترنت.</p>
             </div>
           </div>
           <button 
-            onClick={() => window.dispatchEvent(new Event('triggerInstall'))}
-            className="bg-white text-primary-700 px-8 py-3 rounded-2xl font-black text-sm hover:scale-105 active:scale-95 transition-all flex items-center gap-2 whitespace-nowrap shadow-lg"
+            onClick={handleInstallClick}
+            className="bg-white text-gray-900 px-8 py-3 rounded-2xl font-black text-sm hover:scale-105 active:scale-95 transition-all flex items-center gap-2 whitespace-nowrap shadow-lg"
           >
             <Download size={18} />
             تثبيت التطبيق
@@ -111,8 +124,8 @@ const Dashboard: React.FC = () => {
 
       <div className="flex flex-col sm:flex-row justify-end items-center gap-4">
         <div className="bg-white dark:bg-gray-800 p-1 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex w-full sm:w-auto">
-            <button onClick={() => setFilter('all')} className={`flex-1 px-4 py-2 rounded-lg text-xs font-bold transition-all ${filter === 'all' ? 'bg-gray-900 text-white' : 'text-gray-500'}`}>الكل</button>
-            <button onClick={() => setFilter('month')} className={`flex-1 px-4 py-2 rounded-lg text-xs font-bold transition-all ${filter === 'month' ? 'bg-gray-900 text-white' : 'text-gray-500'}`}>هذا الشهر</button>
+            <button onClick={() => setFilter('all')} className={`flex-1 px-4 py-2 rounded-lg text-xs font-bold transition-all ${filter === 'all' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-500'}`}>الكل</button>
+            <button onClick={() => setFilter('month')} className={`flex-1 px-4 py-2 rounded-lg text-xs font-bold transition-all ${filter === 'month' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-500'}`}>هذا الشهر</button>
         </div>
         <button onClick={() => setIsAddModalOpen(true)} className="bg-primary-600 text-white px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg w-full sm:w-auto justify-center hover:bg-primary-700 active:scale-95 transition-all">
           <Plus size={18} /><span>عملية جديدة</span>
@@ -120,7 +133,6 @@ const Dashboard: React.FC = () => {
       </div>
 
       <div 
-        style={{ backgroundColor: '#0f172a' }} 
         className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-[#0f172a] to-[#1e293b] p-8 text-white shadow-2xl"
       >
           <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
@@ -133,12 +145,12 @@ const Dashboard: React.FC = () => {
               </div>
               <div className="flex gap-4 w-full md:w-auto">
                   <div className="flex-1 bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/10">
-                      <p className="text-emerald-400 text-xs font-bold mb-1">الدخل</p>
-                      <p className="text-xl font-black">{formatCurrency(totalIncome, settings.currency)}</p>
+                      <p className="text-emerald-400 text-xs font-bold mb-1 text-right">الدخل</p>
+                      <p className="text-xl font-black text-right">{formatCurrency(totalIncome, settings.currency)}</p>
                   </div>
                   <div className="flex-1 bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/10">
-                      <p className="text-rose-400 text-xs font-bold mb-1">المصروف</p>
-                      <p className="text-xl font-black">{formatCurrency(totalExpense, settings.currency)}</p>
+                      <p className="text-rose-400 text-xs font-bold mb-1 text-right">المصروف</p>
+                      <p className="text-xl font-black text-right">{formatCurrency(totalExpense, settings.currency)}</p>
                   </div>
               </div>
           </div>
@@ -280,23 +292,6 @@ const Dashboard: React.FC = () => {
                       <label className="text-xs font-bold text-gray-400">ملاحظات</label>
                       <input type="text" value={notes} onChange={e => setNotes(e.target.value)} placeholder="مثلاً: غداء مع العائلة" className="w-full p-4 rounded-xl border-2 border-gray-50 dark:border-gray-800 dark:bg-gray-700 dark:text-white outline-none focus:border-primary-500 transition-all text-sm" />
                   </div>
-              </div>
-
-              <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700">
-                  <label className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" checked={isRecurring} onChange={e => setIsRecurring(e.target.checked)} className="w-5 h-5 rounded-lg border-2 border-gray-300 text-primary-600 focus:ring-primary-500" />
-                      <span className="text-sm font-bold text-gray-700 dark:text-gray-300">جعلها عملية متكررة (اشتراك)</span>
-                  </label>
-                  {isRecurring && (
-                      <div className="mt-4 animate-fadeIn">
-                          <select value={frequency} onChange={e => setFrequency(e.target.value as RecurringFrequency)} className="w-full p-3 rounded-xl border-2 border-gray-50 dark:border-gray-800 dark:bg-gray-700 dark:text-white outline-none focus:border-primary-500 transition-all text-sm">
-                              <option value="daily">يومياً</option>
-                              <option value="weekly">أسبوعياً</option>
-                              <option value="monthly">شهرياً</option>
-                              <option value="yearly">سنوياً</option>
-                          </select>
-                      </div>
-                  )}
               </div>
 
               <button type="submit" className="w-full py-5 bg-primary-600 text-white font-black rounded-2xl shadow-xl shadow-primary-500/30 hover:bg-primary-700 active:scale-95 transition-all flex items-center justify-center gap-2">
