@@ -1,9 +1,10 @@
-const CACHE_NAME = 'mywallet-pro-cache-v4';
+const CACHE_NAME = 'mywallet-v6';
 const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon.png',
+  './',
+  './index.html',
+  './manifest.json',
+  './icon.png',
+  './index.tsx',
   'https://cdn.tailwindcss.com',
   'https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&display=swap'
 ];
@@ -12,19 +13,21 @@ const ASSETS_TO_CACHE = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
+      console.log('SW: كاشينج الأصول الأساسية');
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
   self.skipWaiting();
 });
 
-// مرحلة التنشيط: حذف النسخ القديمة من الكاش
+// مرحلة التنشيط: تنظيف الكاش القديم
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
+            console.log('SW: حذف الكاش القديم', cacheName);
             return caches.delete(cacheName);
           }
         })
@@ -34,14 +37,14 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// إدارة الطلبات: استراتيجية Stale-While-Revalidate
+// استراتيجية Network First مع Fallback للكاش لضمان الأداء الأفضل للـ PWA
 self.addEventListener('fetch', (event) => {
-  // تخطي طلبات الـ API أو الطلبات غير الآمنة
   if (event.request.method !== 'GET') return;
 
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request).then((networkResponse) => {
+    fetch(event.request)
+      .then((networkResponse) => {
+        // تحديث الكاش بالاستجابة الجديدة
         if (networkResponse && networkResponse.status === 200) {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -49,11 +52,17 @@ self.addEventListener('fetch', (event) => {
           });
         }
         return networkResponse;
-      }).catch(() => {
-        // إذا كان الطلب لوجهة أساسية (مثل الصفحة الرئيسية) وفشل الاتصال، نرجع الكاش
-        return cachedResponse;
-      });
-      return cachedResponse || fetchPromise;
-    })
+      })
+      .catch(() => {
+        // إذا فشل النت، نبحث في الكاش
+        return caches.match(event.request).then((cachedResponse) => {
+          if (cachedResponse) return cachedResponse;
+          
+          // إذا كان الطلب لصفحة HTML، نرجع الصفحة الرئيسية من الكاش
+          if (event.request.headers.get('accept').includes('text/html')) {
+            return caches.match('./index.html');
+          }
+        });
+      })
   );
 });
