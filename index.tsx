@@ -10,14 +10,18 @@ declare global {
 }
 
 // تسجيل الـ Service Worker لدعم الـ PWA
+// تم تحسين التسجيل لتفادي مشاكل الـ Origin في بيئات الـ Sandbox
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js', { scope: './' })
+    // استخدام مسار نسبي مباشر 'sw.js' بدلاً من './sw.js' لزيادة التوافق
+    navigator.serviceWorker.register('sw.js', { scope: './' })
       .then(registration => {
         console.log('تم تسجيل الـ Service Worker بنجاح:', registration.scope);
       })
       .catch(error => {
-        console.error('فشل تسجيل الـ Service Worker:', error);
+        // في بعض بيئات المعاينة (مثل AI Studio)، قد يرفض المتصفح تسجيل SW بسبب اختلاف النطاق
+        // نقوم بمعالجة هذا الخطأ بهدوء لضمان عمل التطبيق الأساسي دون انقطاع
+        console.warn('تنبيه: لم يتم تفعيل ميزات الـ PWA في هذه البيئة (Origin Mismatch/Sandbox). سيعمل التطبيق بشكل طبيعي ولكن دون دعم التثبيت أو العمل بلا إنترنت حالياً.', error.message);
       });
   });
 }
