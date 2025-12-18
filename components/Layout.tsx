@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { Bell, Moon, Sun, Wallet, Download, Share, PlusSquare, X, Monitor, Smartphone, Apple } from 'lucide-react';
+import { Bell, Moon, Sun, Wallet, Download, Share, PlusSquare, X, Monitor, Smartphone, Apple, ShieldCheck } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { MENU_ITEMS } from '../constants';
 import { Modal } from './ui/Modal';
@@ -18,7 +18,8 @@ export const Layout: React.FC = () => {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowSplash(false), 3000);
+    // زيادة مدة شاشة الترحيب قليلاً لإظهار اسم المطور بوضوح
+    const timer = setTimeout(() => setShowSplash(false), 4000);
 
     // التحقق من نوع الجهاز والبيئة
     const isIphone = /iPhone|iPad|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
@@ -51,7 +52,6 @@ export const Layout: React.FC = () => {
         setIsInstallable(false);
       }
     } else {
-      // إذا لم يكن هناك حدث تلقائي (مثل iOS)، نظهر الدليل اليدوي
       setShowInstallGuide(true);
     }
   };
@@ -84,14 +84,24 @@ export const Layout: React.FC = () => {
   return (
     <div className="flex h-[100dvh] bg-[#f8fafc] dark:bg-[#020617] overflow-hidden font-sans relative transition-colors duration-500">
       
-      {/* Splash Screen */}
+      {/* Splash Screen مع رسالة التطوير */}
       <div className={`fixed inset-0 z-[100] bg-white dark:bg-[#020617] flex flex-col items-center justify-center transition-all duration-1000 ease-in-out ${showSplash ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-         <div className="relative z-10 flex flex-col items-center justify-center">
-             <div className="w-24 h-24 bg-primary-600 rounded-[2rem] shadow-2xl flex items-center justify-center animate-bounce mb-6">
-                <Wallet size={48} className="text-white" />
+         <div className="relative z-10 flex flex-col items-center justify-center text-center px-6">
+             <div className="w-28 h-28 bg-primary-600 rounded-[2.5rem] shadow-2xl flex items-center justify-center animate-[bounce_2s_infinite] mb-8 ring-8 ring-primary-50 dark:ring-primary-900/20">
+                <Wallet size={56} className="text-white" />
              </div>
-             <h1 className="text-4xl font-black text-gray-900 dark:text-white">محفظتي</h1>
-             <p className="text-primary-600 text-xs font-bold tracking-widest mt-2 uppercase">Pro Finance Manager</p>
+             <h1 className="text-5xl font-black text-gray-900 dark:text-white mb-2">محفظتي</h1>
+             <p className="text-primary-600 text-sm font-bold tracking-[0.3em] uppercase mb-12">الجيل الجديد من الإدارة المالية</p>
+             
+             <div className="mt-10 animate-fadeIn delay-700">
+                <div className="h-[1px] w-20 bg-gray-200 dark:bg-gray-800 mx-auto mb-6"></div>
+                <p className="text-gray-400 dark:text-gray-500 text-xs font-medium mb-2">بإشراف وبرمجة</p>
+                <h2 className="text-xl font-black text-gray-800 dark:text-gray-200">الأستاذ هادي الدليمي</h2>
+                <div className="flex items-center justify-center gap-2 mt-3 text-emerald-500">
+                    <ShieldCheck size={16} />
+                    <span className="text-[10px] font-bold uppercase tracking-widest">المطور المعتمد</span>
+                </div>
+             </div>
          </div>
       </div>
 
@@ -116,17 +126,21 @@ export const Layout: React.FC = () => {
           })}
         </nav>
         
-        {!isStandalone && (
-            <div className="p-4">
+        <div className="p-4 space-y-3">
+            {!isStandalone && (
                 <button 
                   onClick={handleInstallClick}
                   className="w-full flex items-center justify-center gap-2 p-4 rounded-2xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-lg"
                 >
                     <Download size={18} />
-                    <span>تثبيت التطبيق</span>
+                    <span>تثبيت تطبيق أندرويد</span>
                 </button>
+            )}
+            <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700">
+                <p className="text-[10px] text-gray-400 font-bold mb-1">المطور:</p>
+                <p className="text-xs font-black dark:text-white">أ. هادي الدليمي</p>
             </div>
-        )}
+        </div>
       </aside>
 
       {/* Main Content */}
@@ -169,7 +183,7 @@ export const Layout: React.FC = () => {
       </nav>
 
       {/* Enhanced Install Guide Modal */}
-      <Modal isOpen={showInstallGuide} onClose={() => setShowInstallGuide(false)} title="تثبيت محفظتي على هاتفك">
+      <Modal isOpen={showInstallGuide} onClose={() => setShowInstallGuide(false)} title="تثبيت محفظتي">
         <div className="space-y-6 text-center py-4">
             <div className="flex justify-center">
                  <div className="w-20 h-20 bg-primary-600 rounded-3xl flex items-center justify-center shadow-2xl rotate-3">
@@ -198,17 +212,17 @@ export const Layout: React.FC = () => {
                     </div>
                 ) : (
                     <div className="space-y-4 animate-fadeIn">
-                        <p className="text-gray-600 dark:text-gray-400 font-medium">خطوات التثبيت السريع:</p>
+                        <p className="text-gray-600 dark:text-gray-400 font-medium">تثبيت تطبيق أندرويد:</p>
                         <div className="bg-primary-50 dark:bg-primary-900/20 p-5 rounded-2xl border border-primary-100 dark:border-primary-800/50">
-                            <Monitor className="mx-auto text-primary-600 mb-3" size={32} />
-                            <p className="text-sm font-bold text-primary-800 dark:text-primary-300">ابحث عن خيار "تثبيت التطبيق" في قائمة المتصفح أو شريط العنوان بالأعلى.</p>
+                            <Smartphone className="mx-auto text-primary-600 mb-3" size={32} />
+                            <p className="text-sm font-bold text-primary-800 dark:text-primary-300">اضغط على زر التثبيت الذي سيظهر في المتصفح أو اختر "تثبيت التطبيق" من القائمة الجانبية.</p>
                         </div>
                     </div>
                 )}
             </div>
 
             <button onClick={() => setShowInstallGuide(false)} className="w-full bg-primary-600 text-white font-black py-4 rounded-2xl shadow-xl transition-all active:scale-95">
-                تم، شكراً لك!
+                فهمت ذلك
             </button>
         </div>
       </Modal>
