@@ -1,27 +1,37 @@
-const CACHE_NAME = 'mywallet-v8';
+const CACHE_NAME = 'mywallet-v9';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
   './icon.png',
+  './index.tsx',
+  './App.tsx',
   'https://cdn.tailwindcss.com',
-  'https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&display=swap'
+  'https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&display=swap',
+  // تخزين المكتبات الخارجية من الـ Import Map لضمان عملها أوفلاين
+  'https://esm.sh/react@^19.2.3',
+  'https://esm.sh/react-dom@^19.2.3',
+  'https://esm.sh/react-router-dom@^7.11.0',
+  'https://esm.sh/lucide-react@^0.562.0',
+  'https://esm.sh/recharts@^3.6.0',
+  'https://esm.sh/date-fns@^4.1.0'
 ];
 
-// مرحلة التثبيت: تخزين الملفات الأساسية
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      // استخدام cache.addAll مع معالجة الأخطاء لكل ملف
       return Promise.allSettled(
-        ASSETS_TO_CACHE.map(url => cache.add(url))
+        ASSETS_TO_CACHE.map(url => {
+          return cache.add(new Request(url, { mode: 'no-cors' })).catch(err => {
+            console.warn(`Failed to cache: ${url}`, err);
+          });
+        })
       );
     })
   );
   self.skipWaiting();
 });
 
-// مرحلة التنشيط: تنظيف الكاش القديم
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -37,28 +47,28 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// معالجة الطلبات
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
-  // استراتيجية الملاحة (فتح التطبيق)
+  const url = new URL(event.request.url);
+
+  // استراتيجية خاصة لصفحة البداية لضمان عمل الـ SPA
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request).catch(() => {
-        return caches.match('./index.html') || caches.match('index.html') || caches.match('./');
+        return caches.match('./index.html') || caches.match('index.html');
       })
     );
     return;
   }
 
-  // استراتيجية Cache First مع الـ Network Fallback للأصول الثابتة
+  // استراتيجية التخزين أولاً للأصول الثابتة
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) return cachedResponse;
       
       return fetch(event.request).then((networkResponse) => {
-        // تحديث الكاش بالملفات الجديدة (فقط إذا كانت من نفس المصدر)
-        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+        if (networkResponse && networkResponse.status === 200) {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseToCache);
@@ -66,8 +76,10 @@ self.addEventListener('fetch', (event) => {
         }
         return networkResponse;
       }).catch(() => {
-        // إذا فشل النت والملف غير موجود بالكاش
-        return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
+        // إذا فشل كل شيء وكان الطلب لملف CSS أو صورة
+        if (event.request.destination === 'image') {
+          return caches.match('./icon.png');
+        }
       });
     })
   );

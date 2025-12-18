@@ -10,35 +10,31 @@ declare global {
 }
 
 /**
- * تسجيل الـ Service Worker لدعم الـ PWA
- * تم تحسين الكود ليكون أكثر مرونة مع البيئات المختلفة
+ * تسجيل الـ Service Worker بطريقة تضمن التوافق مع مسارات الـ PWA
  */
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    // نستخدم محاولة/خطأ لمنع تعطل التطبيق بالكامل في حال فشل تسجيل الـ Service Worker
+const registerServiceWorker = async () => {
+  if ('serviceWorker' in navigator) {
     try {
-      // نستخدم مساراً نسبياً بسيطاً وهو الخيار الأكثر أماناً وتوافقاً
-      const swPath = './sw.js';
-      
-      navigator.serviceWorker.register(swPath, { scope: './' })
-        .then(registration => {
-          console.log('Service Worker registered with scope:', registration.scope);
-        })
-        .catch(error => {
-          // تسجيل الخطأ كتحذير فقط لضمان استمرار عمل الواجهة الرئيسية
-          console.warn('Service Worker registration skipped:', error.message);
-        });
-    } catch (e) {
-      console.warn('Browser does not support Service Worker registration in this context.');
+      // استخدام مسار كامل مستخلص من موقع الملف الحالي لتجنب مشاكل الـ Origin
+      const swUrl = new URL('./sw.js', import.meta.url).href;
+      const registration = await navigator.serviceWorker.register(swUrl, { 
+        scope: './',
+        updateViaCache: 'none'
+      });
+      console.log('SW Registered:', registration.scope);
+    } catch (error) {
+      console.warn('SW registration failed, application will run in online-only mode:', error);
     }
-  });
-}
+  }
+};
 
-// التقاط حدث التثبيت فوراً (لإظهار زر التثبيت لاحقاً)
+// تشغيل التسجيل
+registerServiceWorker();
+
+// التقاط حدث التثبيت
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   window.deferredPrompt = e;
-  // إبلاغ المكونات بأن التطبيق جاهز للتثبيت
   window.dispatchEvent(new CustomEvent('pwa-installable', { detail: true }));
 });
 
