@@ -22,11 +22,11 @@ const Advisor: React.FC = () => {
   useEffect(() => {
     const checkKeyStatus = async () => {
       try {
+        // Fixed: Use the typed window.aistudio directly as defined in types.ts
         if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
           const selected = await window.aistudio.hasSelectedApiKey();
           setHasKey(selected);
         } else {
-          // Fallback to env variable if not in AI Studio environment
           setHasKey(!!process.env.API_KEY);
         }
       } catch (e) {
@@ -41,8 +41,10 @@ const Advisor: React.FC = () => {
   }, [messages, isLoading]);
 
   const handleOpenKeyDialog = async () => {
+    // Fixed: Use the typed window.aistudio directly
     if (window.aistudio && typeof window.aistudio.openSelectKey === 'function') {
       await window.aistudio.openSelectKey();
+      // As per guidelines, assume success after triggering openSelectKey to avoid race conditions
       setHasKey(true);
     }
   };
@@ -56,7 +58,7 @@ const Advisor: React.FC = () => {
     setIsLoading(true);
 
     try {
-        // Initialize with process.env.API_KEY directly as required
+        // Fixed: Use process.env.API_KEY directly in the constructor as per guidelines
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         
         const totalIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
@@ -79,6 +81,7 @@ const Advisor: React.FC = () => {
           }
         });
 
+        // Fixed: Use .text property directly from the response object
         const reply: Message = { 
           id: (Date.now() + 1).toString(), 
           role: 'model', 
@@ -90,6 +93,7 @@ const Advisor: React.FC = () => {
         console.error("Advisor Error:", error);
         let errorMessage = "عذراً، واجهت مشكلة في الاتصال بالذكاء الاصطناعي.";
         
+        // Handle specific "Requested entity was not found" error by resetting key status as per guidelines
         if (error.message?.includes("Requested entity was not found") || error.status === 404) {
              setHasKey(false);
              errorMessage = "يبدو أن هناك مشكلة في صلاحية مفتاح الـ API الخاص بك. يرجى إعادة ربطه.";

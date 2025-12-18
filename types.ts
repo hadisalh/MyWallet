@@ -1,5 +1,4 @@
 
-
 export type TransactionType = 'income' | 'expense';
 export type DebtType = 'i_owe' | 'owes_me';
 export type DebtStatus = 'paid' | 'partial' | 'unpaid';
@@ -91,23 +90,15 @@ export interface Notification {
   type: 'warning' | 'info' | 'success';
 }
 
-// Define the AIStudio interface to match the environment's requirements
-export interface AIStudio {
-  hasSelectedApiKey: () => Promise<boolean>;
-  openSelectKey: () => Promise<void>;
-}
-
-// Global augmentation for TypeScript
+// Fixed: Define AIStudio interface in the global namespace to prevent naming collisions 
+// and "Subsequent property declarations" errors when augmenting the Window interface.
 declare global {
-  interface Window {
-    // Fixed: Property 'aistudio' must be of type 'AIStudio' to match global declarations
-    aistudio?: AIStudio;
+  interface AIStudio {
+    hasSelectedApiKey: () => Promise<boolean>;
+    openSelectKey: () => Promise<void>;
   }
-  
-  namespace NodeJS {
-    interface ProcessEnv {
-      API_KEY: string;
-    }
+  interface Window {
+    aistudio: AIStudio;
   }
 }
 
