@@ -10,26 +10,16 @@ declare global {
 }
 
 /**
- * تسجيل الـ Service Worker بطريقة تضمن التوافق مع مسارات الـ PWA
+ * تسجيل الـ Service Worker
+ * تم التبسيط لضمان العمل في وضع Standalone
  */
-const registerServiceWorker = async () => {
-  if ('serviceWorker' in navigator) {
-    try {
-      // استخدام مسار كامل مستخلص من موقع الملف الحالي لتجنب مشاكل الـ Origin
-      const swUrl = new URL('./sw.js', import.meta.url).href;
-      const registration = await navigator.serviceWorker.register(swUrl, { 
-        scope: './',
-        updateViaCache: 'none'
-      });
-      console.log('SW Registered:', registration.scope);
-    } catch (error) {
-      console.warn('SW registration failed, application will run in online-only mode:', error);
-    }
-  }
-};
-
-// تشغيل التسجيل
-registerServiceWorker();
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js', { scope: './' })
+      .then(reg => console.log('PWA Ready:', reg.scope))
+      .catch(err => console.warn('PWA Offline mode disabled:', err));
+  });
+}
 
 // التقاط حدث التثبيت
 window.addEventListener('beforeinstallprompt', (e) => {
