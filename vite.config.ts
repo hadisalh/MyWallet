@@ -23,6 +23,7 @@ export default defineConfig({
     }
   },
   server: {
-    historyApiFallback: true,
+    // تمت إزالة historyApiFallback لأن Vite يدعمها تلقائياً في التطبيقات أحادية الصفحة (SPA)
+    // ولأنها تسبب خطأ في تعريفات الأنواع (TypeScript error TS2769)
   }
 });

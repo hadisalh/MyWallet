@@ -1,4 +1,5 @@
 
+
 export type TransactionType = 'income' | 'expense';
 export type DebtType = 'i_owe' | 'owes_me';
 export type DebtStatus = 'paid' | 'partial' | 'unpaid';
@@ -90,14 +91,15 @@ export interface Notification {
   type: 'warning' | 'info' | 'success';
 }
 
-// Fixed: Define AIStudio interface in the global namespace to prevent naming collisions 
-// and "Subsequent property declarations" errors when augmenting the Window interface.
+export interface AIStudio {
+  hasSelectedApiKey: () => Promise<boolean>;
+  openSelectKey: () => Promise<void>;
+}
+
 declare global {
-  interface AIStudio {
-    hasSelectedApiKey: () => Promise<boolean>;
-    openSelectKey: () => Promise<void>;
-  }
   interface Window {
+    // Fixed: Subsequent property declarations must have the same type.
+    // Removed the optional flag to match the system-provided global declaration of window.aistudio.
     aistudio: AIStudio;
   }
 }
