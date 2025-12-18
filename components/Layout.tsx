@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { Bell, Moon, Sun, Wallet, Calendar, Download } from 'lucide-react';
+import { Bell, Moon, Sun, Wallet, Calendar, Download, Info, Share, PlusSquare, X } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { MENU_ITEMS } from '../constants';
+import { Modal } from './ui/Modal';
 
 export const Layout: React.FC = () => {
   const { settings, updateSettings, notifications, markNotificationRead } = useFinance();
@@ -10,7 +11,7 @@ export const Layout: React.FC = () => {
   const [showSplash, setShowSplash] = useState(true);
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [isInstallable, setIsInstallable] = useState(false);
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
   const location = useLocation();
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -24,7 +25,6 @@ export const Layout: React.FC = () => {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      setIsInstallable(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -36,13 +36,16 @@ export const Layout: React.FC = () => {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setIsInstallable(false);
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+      }
+    } else {
+      // إظهار دليل التثبيت اليدوي إذا لم يتوفر الدعم التلقائي
+      setShowInstallGuide(true);
     }
-    setDeferredPrompt(null);
   };
 
   useEffect(() => {
@@ -156,15 +159,14 @@ export const Layout: React.FC = () => {
         </nav>
         
         <div className="p-5 space-y-3">
-           {isInstallable && (
-             <button 
-               onClick={handleInstallClick}
-               className="w-full flex items-center gap-3 p-4 rounded-2xl bg-primary-600 text-white shadow-lg shadow-primary-500/30 hover:bg-primary-700 transition-all font-bold text-xs group"
-             >
-                <Download size={18} className="group-hover:bounce" />
-                <span>تثبيت محفظتي</span>
-             </button>
-           )}
+           <button 
+             onClick={handleInstallClick}
+             className="w-full flex items-center gap-3 p-4 rounded-2xl bg-primary-600 text-white shadow-lg shadow-primary-500/30 hover:bg-primary-700 transition-all font-bold text-xs group"
+           >
+              <Download size={18} className="group-hover:bounce" />
+              <span>تثبيت محفظتي</span>
+           </button>
+           
            <div className="relative p-5 rounded-3xl bg-gradient-to-br from-gray-900 to-gray-800 text-white shadow-xl overflow-hidden group border border-white/10">
               <div className="absolute -right-6 -top-6 w-24 h-24 bg-primary-500/20 rounded-full blur-2xl group-hover:bg-primary-500/30 transition-colors"></div>
               <div className="flex items-center gap-3 relative z-10">
@@ -202,15 +204,13 @@ export const Layout: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2">
-                {isInstallable && (
-                   <button 
-                    onClick={handleInstallClick}
-                    className="lg:hidden w-9 h-9 rounded-xl flex items-center justify-center text-primary-600 bg-primary-50 dark:bg-primary-900/20 active:scale-95"
-                    title="تثبيت التطبيق"
-                   >
-                     <Download size={18} />
-                   </button>
-                )}
+                <button 
+                onClick={handleInstallClick}
+                className="lg:hidden w-9 h-9 rounded-xl flex items-center justify-center text-primary-600 bg-primary-50 dark:bg-primary-900/20 active:scale-95"
+                title="تثبيت التطبيق"
+                >
+                    <Download size={18} />
+                </button>
                 <button
                   onClick={() => updateSettings({ darkMode: !settings.darkMode })}
                   className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-primary-600 dark:hover:text-primary-400 transition-all active:scale-95"
@@ -309,6 +309,54 @@ export const Layout: React.FC = () => {
             })}
         </div>
       </nav>
+
+      {/* Install Guide Modal */}
+      <Modal isOpen={showInstallGuide} onClose={() => setShowInstallGuide(false)} title="تثبيت التطبيق على جهازك">
+        <div className="space-y-6 text-right">
+            <div className="flex justify-center mb-6">
+                 <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-2xl shadow-xl flex items-center justify-center">
+                    <Wallet size={40} className="text-white" />
+                 </div>
+            </div>
+            
+            <p className="text-gray-600 dark:text-gray-300 font-medium leading-relaxed">
+                استمتع بتجربة أفضل وتصفح أسرع من خلال تثبيت "محفظتي" كتطبيق على هاتفك أو حاسوبك:
+            </p>
+
+            <div className="space-y-4">
+                <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+                    <h4 className="font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-2">
+                        <Share size={18} className="text-primary-500" />
+                        لمستخدمي آيفون (Safari):
+                    </h4>
+                    <ol className="text-sm text-gray-500 space-y-2 list-decimal list-inside pr-2">
+                        <li>اضغط على زر <span className="font-bold text-blue-500">المشاركة (Share)</span> في أسفل المتصفح.</li>
+                        <li>اختر <span className="font-bold text-gray-900 dark:text-white">إضافة إلى الشاشة الرئيسية (Add to Home Screen)</span>.</li>
+                        <li>اضغط على <span className="font-bold text-primary-600">إضافة</span> في الزاوية العلوية.</li>
+                    </ol>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+                    <h4 className="font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-2">
+                        <PlusSquare size={18} className="text-primary-500" />
+                        لمستخدمي أندرويد (Chrome):
+                    </h4>
+                    <ol className="text-sm text-gray-500 space-y-2 list-decimal list-inside pr-2">
+                        <li>اضغط على <span className="font-bold text-gray-900 dark:text-white">النقاط الثلاث</span> في الزاوية العلوية.</li>
+                        <li>اختر <span className="font-bold text-gray-900 dark:text-white">تثبيت التطبيق (Install App)</span>.</li>
+                        <li>وافق على طلب التثبيت.</li>
+                    </ol>
+                </div>
+            </div>
+
+            <button 
+                onClick={() => setShowInstallGuide(false)}
+                className="w-full bg-primary-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-primary-500/20"
+            >
+                فهمت ذلك
+            </button>
+        </div>
+      </Modal>
       
       <style>{`
         @keyframes widthGrow { 0% { width: 0; opacity: 0; } 50% { opacity: 1; } 100% { width: 100%; opacity: 0; } }
