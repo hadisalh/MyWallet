@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { Bell, Moon, Sun, Wallet, Download, Share, PlusSquare, X, Monitor, Smartphone, Apple, ShieldCheck, Star } from 'lucide-react';
+import { Moon, Sun, Download, Share, PlusSquare, Monitor, Smartphone, Apple, ShieldCheck } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { MENU_ITEMS } from '../constants';
 import { Modal } from './ui/Modal';
+import { BrandWalletIcon } from './BrandWalletIcon';
 
 export const Layout: React.FC = () => {
   const { settings, updateSettings, notifications } = useFinance();
@@ -15,15 +16,9 @@ export const Layout: React.FC = () => {
   const [isStandalone, setIsStandalone] = useState(false);
   const location = useLocation();
 
-  const unreadCount = notifications.filter(n => !n.read).length;
-
   useEffect(() => {
-    // شاشة الترحيب
     const splashTimer = setTimeout(() => {
       setShowSplash(false);
-      
-      // إظهار نافذة التثبيت تلقائياً بعد ثانية من انتهاء شاشة الترحيب
-      // فقط إذا لم يكن التطبيق مثبتاً بالفعل
       setTimeout(() => {
         const standalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
         if (!standalone) {
@@ -32,14 +27,12 @@ export const Layout: React.FC = () => {
       }, 1500);
     }, 4000);
 
-    // التحقق من نوع الجهاز والبيئة
     const isIphone = /iPhone|iPad|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     setIsIOS(isIphone);
 
     const standalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
     setIsStandalone(standalone);
 
-    // تفعيل إمكانية التثبيت بناءً على الحدث الملتقط في index.tsx
     if (window.deferredPrompt) {
       setIsInstallable(true);
     }
@@ -63,9 +56,6 @@ export const Layout: React.FC = () => {
         setIsInstallable(false);
         setShowAutoInstallPopup(false);
       }
-    } else {
-      // إذا لم يكن هناك حدث (مثل iOS)، نترك النافذة مفتوحة لتظهر التعليمات اليدوية
-      // تم دمج التعليمات في النافذة التلقائية
     }
   };
 
@@ -97,18 +87,19 @@ export const Layout: React.FC = () => {
   return (
     <div className="flex h-[100dvh] bg-[#f8fafc] dark:bg-[#020617] overflow-hidden font-sans relative transition-colors duration-500">
       
-      {/* Splash Screen */}
+      {/* Splash Screen with Custom Icon */}
       <div className={`fixed inset-0 z-[100] bg-white dark:bg-[#020617] flex flex-col items-center justify-center transition-all duration-1000 ease-in-out ${showSplash ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
          <div className="relative z-10 flex flex-col items-center justify-center text-center px-6">
-             <div className="w-28 h-28 bg-primary-600 rounded-[2.5rem] shadow-2xl flex items-center justify-center animate-[bounce_2s_infinite] mb-8 ring-8 ring-primary-50 dark:ring-primary-900/20">
-                <Wallet size={56} className="text-white" />
+             <div className="relative mb-8">
+                 <div className="absolute inset-0 bg-primary-500/20 blur-3xl rounded-full scale-150 animate-pulse"></div>
+                 <BrandWalletIcon size={120} className="relative z-10 drop-shadow-2xl animate-[bounce_2s_infinite]" />
              </div>
              <h1 className="text-5xl font-black text-gray-900 dark:text-white mb-2">محفظتي</h1>
              <p className="text-primary-600 text-sm font-bold tracking-[0.3em] uppercase mb-12">الإدارة المالية الذكية</p>
              
              <div className="mt-10 animate-fadeIn delay-700">
                 <div className="h-[1px] w-20 bg-gray-200 dark:bg-gray-800 mx-auto mb-6"></div>
-                <p className="text-gray-400 dark:text-gray-500 text-xs font-medium mb-2">تطوير وإشراف</p>
+                <p className="text-gray-400 dark:text-gray-500 text-[10px] font-bold mb-2 uppercase tracking-widest">تطوير وإشراف</p>
                 <h2 className="text-xl font-black text-gray-800 dark:text-gray-200">أ. هادي الدليمي</h2>
                 <div className="flex items-center justify-center gap-2 mt-3 text-emerald-500">
                     <ShieldCheck size={16} />
@@ -121,9 +112,7 @@ export const Layout: React.FC = () => {
       {/* Sidebar (Desktop) */}
       <aside className="hidden lg:flex flex-col w-72 m-4 rounded-[2.5rem] bg-white dark:bg-[#0f172a] border border-gray-100 dark:border-white/5 shadow-xl relative z-30">
         <div className="h-28 flex items-center justify-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center text-white shadow-lg">
-                <Wallet className="w-5 h-5" />
-            </div>
+            <BrandWalletIcon size={40} className="drop-shadow-md" />
             <span className="text-xl font-black dark:text-white">محفظتي</span>
         </div>
 
@@ -139,9 +128,9 @@ export const Layout: React.FC = () => {
           })}
         </nav>
         
-        <div className="p-4 space-y-3">
+        <div className="p-4">
             <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700">
-                <p className="text-[10px] text-gray-400 font-bold mb-1">المطور:</p>
+                <p className="text-[10px] text-gray-400 font-bold mb-1 uppercase tracking-widest">المطور:</p>
                 <p className="text-xs font-black dark:text-white">أ. هادي الدليمي</p>
             </div>
         </div>
@@ -181,20 +170,21 @@ export const Layout: React.FC = () => {
         </div>
       </nav>
 
-      {/* Automatic Install Modal (Smart Banner) */}
+      {/* Automatic Install Modal with Brand Icon */}
       <Modal isOpen={showAutoInstallPopup} onClose={() => setShowAutoInstallPopup(false)} title="ثبّت التطبيق الآن">
         <div className="space-y-6 text-center py-2">
             <div className="flex justify-center relative">
-                 <div className="absolute -top-2 -right-2 bg-yellow-400 text-gray-900 text-[10px] font-black px-2 py-1 rounded-full animate-bounce shadow-md">توصية هادي</div>
-                 <div className="w-24 h-24 bg-gradient-to-br from-primary-500 to-primary-700 rounded-[2rem] flex items-center justify-center shadow-2xl transform rotate-3 ring-4 ring-primary-50">
-                    <Wallet size={48} className="text-white" />
+                 <div className="absolute -top-2 -right-2 bg-yellow-400 text-gray-900 text-[10px] font-black px-2 py-1 rounded-full animate-bounce shadow-md z-20">توصية هادي</div>
+                 <div className="relative">
+                    <div className="absolute inset-0 bg-primary-500/10 blur-2xl rounded-full scale-125"></div>
+                    <BrandWalletIcon size={100} className="relative z-10 drop-shadow-xl transform rotate-3" />
                  </div>
             </div>
             
             <div>
                 <h3 className="text-2xl font-black text-gray-900 dark:text-white">تجربة أفضل بانتظارك!</h3>
-                <p className="text-gray-500 dark:text-gray-400 text-sm mt-2 leading-relaxed">
-                    قم بتثبيت تطبيق <b>"محفظتي"</b> على شاشتك الرئيسية للوصول السريع، والعمل بدون إنترنت، وتلقي تنبيهات الديون.
+                <p className="text-gray-500 dark:text-gray-400 text-sm mt-2 leading-relaxed px-4">
+                    قم بتثبيت تطبيق <b>"محفظتي"</b> على شاشتك الرئيسية للوصول السريع والعمل بدون إنترنت.
                 </p>
             </div>
 
@@ -207,28 +197,28 @@ export const Layout: React.FC = () => {
                         </div>
                         <ul className="space-y-3">
                             <li className="flex items-center gap-3 text-xs font-bold text-gray-700 dark:text-gray-300">
-                                <span className="w-6 h-6 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm">1</span>
+                                <span className="w-6 h-6 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm shrink-0">1</span>
                                 <span>اضغط على أيقونة <Share className="inline text-blue-500" size={14} /> (مشاركة) في Safari</span>
                             </li>
                             <li className="flex items-center gap-3 text-xs font-bold text-gray-700 dark:text-gray-300">
-                                <span className="w-6 h-6 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm">2</span>
+                                <span className="w-6 h-6 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm shrink-0">2</span>
                                 <span>اختر <PlusSquare className="inline text-emerald-500" size={14} /> "إضافة للشاشة الرئيسية"</span>
                             </li>
                         </ul>
                     </div>
                 ) : (
                     <div className="flex flex-col gap-3">
-                         <div className="flex items-center justify-center gap-4 text-gray-400 text-xs font-bold mb-2">
-                            <span className="flex items-center gap-1"><Smartphone size={14} /> أندرويد</span>
+                         <div className="flex items-center justify-center gap-4 text-gray-400 text-[10px] font-black uppercase tracking-widest mb-2">
+                            <span className="flex items-center gap-1"><Smartphone size={12} /> Android</span>
                             <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                            <span className="flex items-center gap-1"><Monitor size={14} /> حاسوب</span>
+                            <span className="flex items-center gap-1"><Monitor size={12} /> Desktop</span>
                         </div>
                         <button 
                             onClick={handleInstallNow}
                             className="w-full bg-primary-600 text-white font-black py-4 rounded-2xl shadow-xl shadow-primary-500/30 hover:bg-primary-700 active:scale-95 transition-all flex items-center justify-center gap-2 text-lg"
                         >
                             <Download size={22} />
-                            <span>تثبيت الآن مجاناً</span>
+                            <span>تثبيت التطبيق مجاناً</span>
                         </button>
                     </div>
                 )}
