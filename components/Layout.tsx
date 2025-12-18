@@ -1,20 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { Moon, Sun, Download, Share, PlusSquare, Monitor, Smartphone, Apple, ShieldCheck } from 'lucide-react';
+import { Moon, Sun, Download, Share, PlusSquare, Monitor, Smartphone, Apple, ShieldCheck, Bell, CheckCircle, Info, AlertTriangle } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
-import { MENU_ITEMS } from '../constants';
+import { MENU_ITEMS, formatDate } from '../constants';
 import { Modal } from './ui/Modal';
 import { BrandWalletIcon } from './BrandWalletIcon';
 
 export const Layout: React.FC = () => {
-  const { settings, updateSettings, notifications } = useFinance();
+  const { settings, updateSettings, notifications, markNotificationRead } = useFinance();
   const [showSplash, setShowSplash] = useState(true);
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [isInstallable, setIsInstallable] = useState(false);
   const [showAutoInstallPopup, setShowAutoInstallPopup] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   const location = useLocation();
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   useEffect(() => {
     const splashTimer = setTimeout(() => {
@@ -30,9 +34,6 @@ export const Layout: React.FC = () => {
     const isIphone = /iPhone|iPad|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     setIsIOS(isIphone);
 
-    const standalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
-    setIsStandalone(standalone);
-
     if (window.deferredPrompt) {
       setIsInstallable(true);
     }
@@ -40,9 +41,18 @@ export const Layout: React.FC = () => {
     const handlePwaInstallable = () => setIsInstallable(true);
     window.addEventListener('pwa-installable', handlePwaInstallable);
 
+    // Close notifications when clicking outside
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+
     return () => {
       clearTimeout(splashTimer);
       window.removeEventListener('pwa-installable', handlePwaInstallable);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
@@ -87,7 +97,7 @@ export const Layout: React.FC = () => {
   return (
     <div className="flex h-[100dvh] bg-[#f8fafc] dark:bg-[#020617] overflow-hidden font-sans relative transition-colors duration-500">
       
-      {/* Splash Screen with Custom Icon */}
+      {/* Splash Screen */}
       <div className={`fixed inset-0 z-[100] bg-white dark:bg-[#020617] flex flex-col items-center justify-center transition-all duration-1000 ease-in-out ${showSplash ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
          <div className="relative z-10 flex flex-col items-center justify-center text-center px-6">
              <div className="relative mb-8">
@@ -144,7 +154,60 @@ export const Layout: React.FC = () => {
                 <span className="text-[10px] font-bold text-gray-500 mt-1 uppercase">{todayDate}</span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+                {/* Notifications Button */}
+                <div className="relative" ref={notifRef}>
+                    <button 
+                        onClick={() => setShowNotifications(!showNotifications)}
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${showNotifications ? 'bg-primary-600 text-white shadow-lg' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                    >
+                        <Bell size={20} />
+                        {unreadCount > 0 && (
+                            <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white dark:border-[#020617] animate-bounce">
+                                {unreadCount}
+                            </span>
+                        )}
+                    </button>
+
+                    {/* Notifications Dropdown */}
+                    {showNotifications && (
+                        <div className="absolute left-0 mt-3 w-80 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden z-50 animate-[slideUp_0.2s_ease-out]">
+                            <div className="p-4 border-b dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/50 flex justify-between items-center">
+                                <h4 className="font-bold text-sm dark:text-white">الإشعارات</h4>
+                                {unreadCount > 0 && <span className="text-[10px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-widest">جديد ({unreadCount})</span>}
+                            </div>
+                            <div className="max-h-96 overflow-y-auto custom-scrollbar">
+                                {notifications.length === 0 ? (
+                                    <div className="p-10 text-center flex flex-col items-center gap-3 opacity-40">
+                                        <Bell size={32} />
+                                        <p className="text-xs font-bold">لا توجد إشعارات حالياً</p>
+                                    </div>
+                                ) : (
+                                    notifications.map((notif) => (
+                                        <div 
+                                            key={notif.id} 
+                                            onClick={() => markNotificationRead(notif.id)}
+                                            className={`p-4 border-b dark:border-gray-700 last:border-0 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50 ${!notif.read ? 'bg-primary-50/30 dark:bg-primary-900/10' : ''}`}
+                                        >
+                                            <div className="flex gap-3">
+                                                <div className={`mt-1 shrink-0 ${notif.type === 'success' ? 'text-emerald-500' : notif.type === 'warning' ? 'text-amber-500' : 'text-blue-500'}`}>
+                                                    {notif.type === 'success' ? <CheckCircle size={16} /> : notif.type === 'warning' ? <AlertTriangle size={16} /> : <Info size={16} />}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className={`text-xs font-bold mb-0.5 ${!notif.read ? 'text-gray-900 dark:text-white' : 'text-gray-500'}`}>{notif.title}</p>
+                                                    <p className="text-[11px] text-gray-500 leading-relaxed mb-2">{notif.message}</p>
+                                                    <p className="text-[9px] text-gray-400 font-bold">{formatDate(notif.date)}</p>
+                                                </div>
+                                                {!notif.read && <div className="w-2 h-2 rounded-full bg-primary-600 mt-1"></div>}
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
                 <button onClick={() => updateSettings({ darkMode: !settings.darkMode })} className="w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800">
                   {settings.darkMode ? <Sun size={20} /> : <Moon size={20} />}
                 </button>
@@ -170,7 +233,7 @@ export const Layout: React.FC = () => {
         </div>
       </nav>
 
-      {/* Automatic Install Modal with Brand Icon */}
+      {/* Automatic Install Modal */}
       <Modal isOpen={showAutoInstallPopup} onClose={() => setShowAutoInstallPopup(false)} title="ثبّت التطبيق الآن">
         <div className="space-y-6 text-center py-2">
             <div className="flex justify-center relative">
@@ -184,7 +247,7 @@ export const Layout: React.FC = () => {
             <div>
                 <h3 className="text-2xl font-black text-gray-900 dark:text-white">تجربة أفضل بانتظارك!</h3>
                 <p className="text-gray-500 dark:text-gray-400 text-sm mt-2 leading-relaxed px-4">
-                    قم بتثبيت تطبيق <b>"محفظتي"</b> على شاشتك الرئيسية للوصول السريع والعمل بدون إنترنت.
+                    قم بتثبيت تطبيق <b>"محفظتي"</b> على شاشتك الرئيسية للوصول السريع والعمل المستمر.
                 </p>
             </div>
 
