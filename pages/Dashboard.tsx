@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useFinance } from '../context/FinanceContext';
 import { formatCurrency, formatDate, ICON_MAP } from '../constants';
-import { ArrowDownLeft, ArrowUpRight, Plus, Trash2, Smartphone, Download, AlertCircle, Apple } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Plus, Trash2, AlertCircle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid, PieChart, Pie } from 'recharts';
 import { Modal } from '../components/ui/Modal';
 import { TransactionType, RecurringFrequency, Category } from '../types';
@@ -11,8 +11,6 @@ const Dashboard: React.FC = () => {
   const { transactions, settings, addTransaction, addRecurring, deleteTransaction, categories } = useFinance();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [filter, setFilter] = useState<'all' | 'month'>('all');
-  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
 
   // Form State
   const [amount, setAmount] = useState('');
@@ -22,17 +20,6 @@ const Dashboard: React.FC = () => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isRecurring, setIsRecurring] = useState(false);
   const [frequency, setFrequency] = useState<RecurringFrequency>('monthly');
-
-  useEffect(() => {
-    const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
-    const isIphone = /iPhone|iPad|iPod/.test(navigator.userAgent);
-    setIsIOS(isIphone);
-
-    if (!isPWA) {
-      const timer = setTimeout(() => setShowInstallPrompt(true), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, []);
 
   useEffect(() => {
     const filtered = categories.filter(c => type === 'income' ? (c.id === 'salary' || c.id === 'gift' || c.id === 'other') : c.id !== 'salary');
@@ -74,16 +61,6 @@ const Dashboard: React.FC = () => {
         .sort((a: any, b: any) => b.value - a.value);
   }, [filteredTransactions, categories]);
 
-  const handleInstallClick = async () => {
-    const promptEvent = window.deferredPrompt;
-    if (promptEvent) {
-        promptEvent.prompt();
-    } else {
-        // إذا لم يكن هناك حدث، نعطي إشعاراً للمستخدم
-        alert(isIOS ? 'استخدم زر المشاركة في متصفح Safari لإضافة التطبيق للشاشة الرئيسية.' : 'ابحث عن خيار التثبيت في قائمة المتصفح.');
-    }
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount) return;
@@ -101,26 +78,7 @@ const Dashboard: React.FC = () => {
   return (
     <div className="space-y-6 max-w-7xl mx-auto p-4 md:p-0">
       
-      {showInstallPrompt && (
-        <div className="bg-gradient-to-r from-gray-900 to-gray-800 dark:from-primary-600 dark:to-primary-800 rounded-3xl p-6 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-4 animate-fadeIn border border-white/10">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shrink-0">
-               {isIOS ? <Apple size={32} /> : <Smartphone size={32} />}
-            </div>
-            <div>
-               <h4 className="text-xl font-black">ثبّت "محفظتي" الآن!</h4>
-               <p className="text-white/70 text-sm">احصل على تجربة أسرع، وصول فوري، وعمل بدون إنترنت.</p>
-            </div>
-          </div>
-          <button 
-            onClick={handleInstallClick}
-            className="bg-white text-gray-900 px-8 py-3 rounded-2xl font-black text-sm hover:scale-105 active:scale-95 transition-all flex items-center gap-2 whitespace-nowrap shadow-lg"
-          >
-            <Download size={18} />
-            تثبيت التطبيق
-          </button>
-        </div>
-      )}
+      {/* تم نقل نظام التثبيت التلقائي إلى الـ Layout ليكون شاملاً */}
 
       <div className="flex flex-col sm:flex-row justify-end items-center gap-4">
         <div className="bg-white dark:bg-gray-800 p-1 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex w-full sm:w-auto">
