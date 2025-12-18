@@ -98,9 +98,9 @@ export interface AIStudio {
 
 declare global {
   interface Window {
-    // FIX: Made aistudio optional to ensure identical modifiers across all declarations
-    // and resolve type conflict issues with subsequent property declarations.
-    aistudio?: AIStudio;
+    // Removed optional modifier to ensure this declaration matches the internal platform definition,
+    // resolving the "Subsequent property declarations must have the same type" error.
+    aistudio: AIStudio;
   }
 }
 

@@ -22,12 +22,10 @@ export const Layout: React.FC = () => {
         setShowSplash(false);
     }, 3500); 
 
-    // التحقق مما إذا كان التطبيق يعمل كـ PWA مثبت بالفعل
     if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) {
       setIsStandalone(true);
     }
 
-    // منطق التقاط حدث التثبيت
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
@@ -35,11 +33,16 @@ export const Layout: React.FC = () => {
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
+    // حدث مخصص لتشغيل التثبيت من أي صفحة (مثل لوحة التحكم)
+    const triggerInstallHandler = () => handleInstallClick();
+    window.addEventListener('triggerInstall', triggerInstallHandler);
+
     return () => {
       clearTimeout(timer);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('triggerInstall', triggerInstallHandler);
     };
-  }, []);
+  }, [deferredPrompt]);
 
   const handleInstallClick = async () => {
     if (deferredPrompt) {
@@ -351,11 +354,11 @@ export const Layout: React.FC = () => {
                     </h5>
                     <div className="flex items-start gap-3">
                         <div className="w-6 h-6 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center shrink-0 text-xs font-bold">1</div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">اضغط على زر <span className="font-bold text-blue-500">مشاركة</span> في متصفح Safari.</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">اضغط على زر <span className="font-bold text-blue-500">مشاركة (Share)</span> في متصفح Safari.</p>
                     </div>
                     <div className="flex items-start gap-3 mt-3">
                         <div className="w-6 h-6 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center shrink-0 text-xs font-bold">2</div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">مرر لأسفل واختر <span className="font-bold text-gray-900 dark:text-white">إضافة إلى الشاشة الرئيسية</span>.</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">مرر لأسفل واختر <span className="font-bold text-gray-900 dark:text-white">إضافة إلى الشاشة الرئيسية (Add to Home Screen)</span>.</p>
                     </div>
                 </div>
 
@@ -366,7 +369,7 @@ export const Layout: React.FC = () => {
                     </h5>
                     <div className="flex items-start gap-3">
                         <div className="w-6 h-6 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center shrink-0 text-xs font-bold">1</div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">اضغط على قائمة المتصفح (3 نقاط) أو أيقونة التحميل في شريط العنوان.</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">اضغط على زر التثبيت في شريط العنوان أو القائمة الجانبية.</p>
                     </div>
                     <div className="flex items-start gap-3 mt-3">
                         <div className="w-6 h-6 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center shrink-0 text-xs font-bold">2</div>

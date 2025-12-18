@@ -1,8 +1,7 @@
-
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useFinance } from '../context/FinanceContext';
 import { formatCurrency, formatDate, ICON_MAP } from '../constants';
-import { ArrowDownLeft, ArrowUpRight, TrendingUp, Plus, Trash2, Calendar, AlertCircle, PieChart as PieChartIcon, Repeat, Check, FileText } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, TrendingUp, Plus, Trash2, Calendar, AlertCircle, PieChart as PieChartIcon, Repeat, Check, FileText, Smartphone, Download } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid, PieChart, Pie } from 'recharts';
 import { Modal } from '../components/ui/Modal';
 import { TransactionType, RecurringFrequency } from '../types';
@@ -12,6 +11,7 @@ const Dashboard: React.FC = () => {
   const { transactions, settings, addTransaction, addRecurring, deleteTransaction, budget, categories } = useFinance();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [filter, setFilter] = useState<'all' | 'month'>('all');
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
 
   const [amount, setAmount] = useState('');
   const [type, setType] = useState<TransactionType>('expense');
@@ -21,6 +21,15 @@ const Dashboard: React.FC = () => {
   
   const [isRecurring, setIsRecurring] = useState(false);
   const [frequency, setFrequency] = useState<RecurringFrequency>('monthly');
+
+  useEffect(() => {
+    // التحقق مما إذا كان التطبيق مثبتاً بالفعل
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+    if (!isPWA) {
+      const timer = setTimeout(() => setShowInstallPrompt(true), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   const filteredTransactions = useMemo(() => {
     const now = new Date();
@@ -69,6 +78,29 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto p-4 md:p-0">
+      
+      {/* بطاقة دعوة التثبيت الاحترافية */}
+      {showInstallPrompt && (
+        <div className="bg-gradient-to-r from-primary-600 to-primary-800 rounded-3xl p-6 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-4 animate-fadeIn">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shrink-0">
+               <Smartphone size={32} />
+            </div>
+            <div>
+               <h4 className="text-xl font-black">ثبّت "محفظتي" الآن!</h4>
+               <p className="text-primary-100 text-sm opacity-90">احصل على تجربة أسرع، وصول فوري، وعمل بدون إنترنت.</p>
+            </div>
+          </div>
+          <button 
+            onClick={() => window.dispatchEvent(new Event('triggerInstall'))}
+            className="bg-white text-primary-700 px-8 py-3 rounded-2xl font-black text-sm hover:scale-105 active:scale-95 transition-all flex items-center gap-2 whitespace-nowrap shadow-lg"
+          >
+            <Download size={18} />
+            تثبيت التطبيق
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row justify-end items-center gap-4">
         <div className="bg-white dark:bg-gray-800 p-1 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex w-full sm:w-auto">
             <button onClick={() => setFilter('all')} className={`flex-1 px-4 py-2 rounded-lg text-xs font-bold ${filter === 'all' ? 'bg-gray-900 text-white' : 'text-gray-500'}`}>الكل</button>
@@ -79,7 +111,6 @@ const Dashboard: React.FC = () => {
         </button>
       </div>
 
-      {/* بطاقة الرصيد المحسنة */}
       <div 
         style={{ backgroundColor: '#0f172a' }} 
         className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#0f172a] to-[#1e293b] p-8 text-white shadow-2xl"
