@@ -1,4 +1,5 @@
 
+
 export type TransactionType = 'income' | 'expense';
 export type DebtType = 'i_owe' | 'owes_me'; // debts on me vs debts to me
 export type DebtStatus = 'paid' | 'partial' | 'unpaid';
@@ -89,4 +90,23 @@ export interface Notification {
   date: string;
   read: boolean;
   type: 'warning' | 'info' | 'success';
+}
+
+// تعريفات عالمية لمنع أخطاء TypeScript في بيئة Vercel و Vite
+declare global {
+  // Define AIStudio interface to match external environment declarations
+  interface AIStudio {
+    hasSelectedApiKey(): Promise<boolean>;
+    openSelectKey(): Promise<void>;
+  }
+
+  interface Window {
+    // Property must match the environmental 'AIStudio' type and modifiers (typically readonly)
+    readonly aistudio: AIStudio;
+  }
+  namespace NodeJS {
+    interface ProcessEnv {
+      API_KEY: string;
+    }
+  }
 }

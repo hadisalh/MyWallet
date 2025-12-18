@@ -22,15 +22,16 @@ const Advisor: React.FC = () => {
   useEffect(() => {
     const checkKeyStatus = async () => {
       try {
-        if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
-          const selected = await window.aistudio.hasSelectedApiKey();
+        const win = window as any;
+        if (win.aistudio && typeof win.aistudio.hasSelectedApiKey === 'function') {
+          const selected = await win.aistudio.hasSelectedApiKey();
           setHasKey(selected);
         } else {
           // إذا لم تكن الميزة متوفرة، نفترض وجود المفتاح في البيئة
-          setHasKey(!!process.env.API_KEY);
+          setHasKey(!!(process as any).env.API_KEY);
         }
       } catch (e) {
-        setHasKey(!!process.env.API_KEY);
+        setHasKey(!!(process as any).env.API_KEY);
       }
     };
     checkKeyStatus();
@@ -41,8 +42,9 @@ const Advisor: React.FC = () => {
   }, [messages, isLoading]);
 
   const handleOpenKeyDialog = async () => {
-    if (window.aistudio && typeof window.aistudio.openSelectKey === 'function') {
-      await window.aistudio.openSelectKey();
+    const win = window as any;
+    if (win.aistudio && typeof win.aistudio.openSelectKey === 'function') {
+      await win.aistudio.openSelectKey();
       // المضي قدماً بافتراض النجاح لتفادي Race Condition
       setHasKey(true);
     }
@@ -58,7 +60,7 @@ const Advisor: React.FC = () => {
 
     try {
         // إنشاء نسخة جديدة من GoogleGenAI لضمان استخدام أحدث مفتاح
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const ai = new GoogleGenAI({ apiKey: (process as any).env.API_KEY });
         
         const totalIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
         const totalExpense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
