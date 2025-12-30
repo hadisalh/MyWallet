@@ -44,7 +44,7 @@ export default function Debts() {
 
   const handleAddDebt = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedPerson) return;
+    if (!selectedPerson || !newDebtAmount) return;
     const now = new Date();
     const recordingDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0).toISOString();
     addDebtToPerson(selectedPerson.id, {
@@ -75,13 +75,11 @@ export default function Debts() {
       const remaining = paymentModalData.debt.amount - paymentModalData.debt.paidAmount;
       const finalAmountToAdd = Math.min(amountToAdd, remaining); 
       const newPaidTotal = paymentModalData.debt.paidAmount + finalAmountToAdd;
-      const extendedDueDate = new Date();
-      extendedDueDate.setDate(extendedDueDate.getDate() + 30);
-      const newDueDateStr = extendedDueDate.toISOString().split('T')[0];
+      
       updateDebt(paymentModalData.personId, paymentModalData.debt.id, {
           paidAmount: newPaidTotal,
-          dueDate: newDueDateStr 
       });
+
       const person = people.find(p => p.id === paymentModalData.personId);
       if (person) {
           const isIncome = person.relationType === 'owes_me'; 
@@ -218,14 +216,14 @@ export default function Debts() {
           <div className="space-y-6">
             <div className="bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700">
               <h4 className="font-black text-sm mb-4 text-slate-900 dark:text-white">إضافة دين جديد</h4>
-              <div className="space-y-3">
+              <form onSubmit={handleAddDebt} className="space-y-3">
                  <div className="grid grid-cols-2 gap-3">
-                    <input type="number" placeholder="المبلغ" value={newDebtAmount} onChange={e => setNewDebtAmount(e.target.value)} className="p-3 text-sm rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white" />
+                    <input type="number" required placeholder="المبلغ" value={newDebtAmount} onChange={e => setNewDebtAmount(e.target.value)} className="p-3 text-sm rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white" />
                     <input type="date" value={newDebtDate} onChange={e => setNewDebtDate(e.target.value)} className="p-3 text-sm rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white" />
                  </div>
                  <input type="text" placeholder="ملاحظات..." value={newDebtNotes} onChange={e => setNewDebtNotes(e.target.value)} className="w-full p-3 text-sm rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white" />
-                <button onClick={handleAddDebt} className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-black py-3 rounded-xl">تسجيل اليوم</button>
-              </div>
+                <button type="submit" className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-black py-3 rounded-xl">تسجيل الدين</button>
+              </form>
             </div>
 
             <div className="space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar">
@@ -246,6 +244,40 @@ export default function Debts() {
               ))}
             </div>
           </div>
+        </Modal>
+      )}
+
+      {/* Payment Modal */}
+      {paymentModalData && (
+        <Modal 
+          isOpen={!!paymentModalData} 
+          onClose={() => { setPaymentModalData(null); setPaymentAmount(''); }} 
+          title={`تسديد دفعة إلى ${people.find(p => p.id === paymentModalData.personId)?.name}`}
+        >
+          <form onSubmit={handlePaymentSubmit} className="space-y-6">
+            <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 text-center">
+              <p className="text-sm text-slate-500 dark:text-slate-400 font-bold mb-1">المبلغ المتبقي من هذا الدين</p>
+              <p className="text-3xl font-black text-slate-900 dark:text-white">
+                {formatCurrency(paymentModalData.debt.amount - paymentModalData.debt.paidAmount, settings.currency)}
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-black mb-2 text-slate-900 dark:text-white">قيمة الدفعة</label>
+              <input 
+                type="number"
+                required
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value)}
+                className="w-full px-4 py-3.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-500 font-bold text-lg" 
+                placeholder="0.00"
+                autoFocus
+              />
+            </div>
+            <button type="submit" className="w-full bg-primary-600 text-white font-black py-4 rounded-xl shadow-lg hover:bg-primary-700 transition-all flex items-center justify-center gap-2">
+              <Banknote size={18}/>
+              تأكيد السداد
+            </button>
+          </form>
         </Modal>
       )}
     </div>

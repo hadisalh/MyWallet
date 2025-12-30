@@ -34,6 +34,7 @@ export const DEFAULT_CATEGORIES_DATA: Category[] = [
   { id: 'salary', label: 'راتب ودخل', iconName: 'Briefcase', color: '#059669', bg: 'bg-green-100', text: 'text-green-700' }, 
   { id: 'gift', label: 'هدايا', iconName: 'Gift', color: '#f43f5e', bg: 'bg-rose-100', text: 'text-rose-600' },
   { id: 'mobile', label: 'اتصالات', iconName: 'Smartphone', color: '#64748b', bg: 'bg-slate-100', text: 'text-slate-600' },
+  { id: 'debt_payment', label: 'سداد ديون', iconName: 'Wallet', color: '#6b7280', bg: 'bg-gray-100', text: 'text-gray-600' },
   { id: 'other', label: 'أخرى', iconName: 'Coffee', color: '#9ca3af', bg: 'bg-gray-100', text: 'text-gray-600' },
 ];
 
