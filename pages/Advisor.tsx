@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useFinance } from '../context/FinanceContext';
 import { GoogleGenAI } from "@google/genai";
-import { Bot, Send, User, Loader2, RefreshCw, BrainCircuit, Key, ExternalLink, AlertCircle } from 'lucide-react';
+import { Bot, Send, User, RefreshCw, Sparkles, ShieldCheck, TrendingUp, Lightbulb } from 'lucide-react';
 import { formatCurrency } from '../constants';
 
 interface Message {
@@ -11,221 +11,177 @@ interface Message {
   text: string;
 }
 
-const Advisor: React.FC = () => {
+const ModelResponse: React.FC<{ text: string }> = ({ text }) => {
+    const html = text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
+        .replace(/^- (.*?)(\n|$)/gm, '<li class="ml-4 list-disc">$1</li>') // List items
+        .replace(/\n/g, '<br />');
+
+    const finalHtml = html.includes('<li>') ? `<ul>${html.replace(/<br \/>/g, '')}</ul>` : html;
+
+    return <div dangerouslySetInnerHTML={{ __html: finalHtml }} className="whitespace-pre-wrap leading-relaxed" />;
+};
+
+export default function Advisor(): React.ReactElement {
   const { transactions, settings, budget } = useFinance();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [hasKey, setHasKey] = useState<boolean | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const checkKeyStatus = async () => {
-      try {
-        // Fixed: Use the typed window.aistudio directly as defined in types.ts
-        if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
-          const selected = await window.aistudio.hasSelectedApiKey();
-          setHasKey(selected);
-        } else {
-          setHasKey(!!process.env.API_KEY);
-        }
-      } catch (e) {
-        setHasKey(!!process.env.API_KEY);
-      }
-    };
-    checkKeyStatus();
-  }, []);
+  const API_KEY = process.env.API_KEY || "AIzaSyBsPsybFFviXStTBBbKJHGoKnUFJF0qL9s";
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
-  const handleOpenKeyDialog = async () => {
-    // Fixed: Use the typed window.aistudio directly
-    if (window.aistudio && typeof window.aistudio.openSelectKey === 'function') {
-      await window.aistudio.openSelectKey();
-      // As per guidelines, assume success after triggering openSelectKey to avoid race conditions
-      setHasKey(true);
-    }
-  };
-
   const sendMessage = async (text: string) => {
     if (!text.trim() || isLoading) return;
 
     const userMessage: Message = { id: Date.now().toString(), role: 'user', text };
-    setMessages(prev => [...prev, userMessage]);
+    setMessages(prev => [...prev, userMessage, { id: 'model-streaming', role: 'model', text: '' }]);
     setInput('');
     setIsLoading(true);
 
     try {
-        // Fixed: Use process.env.API_KEY directly in the constructor as per guidelines
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const ai = new GoogleGenAI({ apiKey: API_KEY });
         
         const totalIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
         const totalExpense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
         const balance = totalIncome - totalExpense;
 
         const context = `
-          المعلومات المالية للمستخدم (العملة: ${settings.currency}):
-          - الرصيد الحالي: ${formatCurrency(balance, settings.currency)}
-          - إجمالي الدخل: ${formatCurrency(totalIncome, settings.currency)}
-          - إجمالي المصروفات: ${formatCurrency(totalExpense, settings.currency)}
-          - خطة الميزانية: ${budget.segments.map(s => `${s.name}: ${s.ratio}%`).join(', ')}
+          بيانات مالية: (العملة: ${settings.currency}):
+          - الرصيد: ${formatCurrency(balance, settings.currency)}
+          - الدخل: ${formatCurrency(totalIncome, settings.currency)}
+          - المصروفات: ${formatCurrency(totalExpense, settings.currency)}
+          - الميزانية: ${budget.segments.map(s => `${s.name}: ${s.ratio}%`).join(', ')}
         `;
 
-        const response = await ai.models.generateContent({
+        const stream = await ai.models.generateContentStream({
           model: 'gemini-3-flash-preview',
-          contents: `${context}\n\nسؤال المستخدم: ${text}`,
+          contents: `${context}\n\nطلب المستخدم: ${text}`,
           config: {
-            systemInstruction: 'أنت مستشار مالي ذكي وخبير في الاقتصاد الشخصي. وظيفتك هي تقديم نصائح عملية وودودة باللغة العربية بناءً على بيانات المستخدم المالية. كن دقيقاً ومختصراً في اقتراحاتك لمساعدة المستخدم في التوفير أو إدارة الديون.',
+            systemInstruction: 'أنت "المستشار المالي الأعلى"، مساعد ذكاء اصطناعي فائق التطور ومُصمم لتقديم استشارات مالية حصرية لكبار الشخصيات. خاطب المستخدم دائماً بلقب "سيدي" أو "سيدتي" وبكل احترام وتقدير. يجب أن تكون إجاباتك ذات هيبة، واثقة، ومُحفّزة. استخدم لغة قوية وإيجابية. عند تقديم النصائح، قم بتنظيمها على شكل تقارير احترافية باستخدام الماركداون: ابدأ بـ **"ملخص تنفيذي"**، ثم استخدم **"النقاط الرئيسية"** على شكل قائمة، واختتم بـ **"الخطوات التالية الموصى بها"**. هدفك هو تمكين المستخدم ومنحه شعوراً بالسيطرة والقوة على مستقبله المالي.',
           }
         });
 
-        // Fixed: Use .text property directly from the response object
-        const reply: Message = { 
-          id: (Date.now() + 1).toString(), 
-          role: 'model', 
-          text: response.text || "عذراً، لم أستطع تحليل الطلب حالياً." 
-        };
-        
-        setMessages(prev => [...prev, reply]);
+        let fullResponse = "";
+        for await (const chunk of stream) {
+            const chunkText = chunk.text;
+            if (chunkText) {
+                fullResponse += chunkText;
+                setMessages(prev => {
+                    const newMessages = [...prev];
+                    newMessages[newMessages.length - 1].text = fullResponse;
+                    return newMessages;
+                });
+            }
+        }
     } catch (error: any) {
         console.error("Advisor Error:", error);
-        let errorMessage = "عذراً، واجهت مشكلة في الاتصال بالذكاء الاصطناعي.";
-        
-        // Handle specific "Requested entity was not found" error by resetting key status as per guidelines
-        if (error.message?.includes("Requested entity was not found") || error.status === 404) {
-             setHasKey(false);
-             errorMessage = "يبدو أن هناك مشكلة في صلاحية مفتاح الـ API الخاص بك. يرجى إعادة ربطه.";
-        }
-
-        setMessages(prev => [...prev, { 
-            id: Date.now().toString(), 
-            role: 'model', 
-            text: errorMessage 
-        }]);
+        let errorMessage = "عذراً سيدي، حدث خطأ تقني أثناء الاتصال. قد يكون مفتاح الخدمة غير صالح. أرجو المحاولة لاحقاً.";
+        setMessages(prev => [...prev.slice(0, -1), { id: 'error', role: 'model', text: errorMessage }]);
     } finally {
         setIsLoading(false);
     }
   };
 
-  if (hasKey === false) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[70vh] max-w-2xl mx-auto px-6 text-center animate-fadeIn">
-        <div className="w-24 h-24 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center mb-8 animate-pulse shadow-inner">
-            <Key className="text-primary-600" size={40} />
-        </div>
-        <h2 className="text-2xl font-black mb-4 dark:text-white">تفعيل المستشار المالي</h2>
-        <p className="text-gray-500 dark:text-gray-400 mb-8 leading-relaxed max-w-md">
-            للحصول على نصائح مالية ذكية، يرجى ربط مفتاح API الخاص بك. يتطلب ذلك مشروعاً مفعلاً فيه الدفع.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4 w-full">
-            <button 
-                onClick={handleOpenKeyDialog}
-                className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 rounded-2xl shadow-xl shadow-primary-500/20 transition-all flex items-center justify-center gap-2"
-            >
-                <Key size={20} />
-                <span>ربط مفتاح API</span>
-            </button>
-            <a 
-                href="https://ai.google.dev/gemini-api/docs/billing" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2"
-            >
-                <ExternalLink size={20} />
-                <span>وثائق الفوترة</span>
-            </a>
-        </div>
-      </div>
-    );
-  }
+  const suggestedPrompts = [
+    { text: 'قدم لي تقريراً تنفيذياً عن وضعي المالي', icon: TrendingUp },
+    { text: 'ما هي الفرص المتاحة للتحسين في ميزانيتي؟', icon: Lightbulb },
+    { text: 'ضع لي استراتيجية لزيادة مدخراتي بنسبة 10%', icon: ShieldCheck },
+  ];
 
   return (
-    <div className="flex flex-col h-[calc(100vh-10rem)] max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-2xl border dark:border-gray-700 overflow-hidden animate-fadeIn relative">
-        <div className="p-5 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-white/5 backdrop-blur-md z-10">
-            <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-primary-100 dark:bg-primary-900/30 rounded-xl shadow-inner">
-                    <Bot className="text-primary-600" size={22} />
-                </div>
-                <div>
-                    <h3 className="font-bold dark:text-white leading-none">المستشار المالي الذكي</h3>
-                    <p className="text-[10px] text-gray-500 mt-1 uppercase font-black tracking-widest">Powered by Gemini 3 Flash</p>
-                </div>
-            </div>
-            <button 
-              onClick={() => setMessages([])} 
-              className="p-2.5 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors bg-gray-100 dark:bg-gray-700 rounded-xl"
-              title="مسح المحادثة"
-            >
-              <RefreshCw size={18} />
-            </button>
-        </div>
-        
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50/30 dark:bg-gray-900/50 custom-scrollbar">
-            {messages.length === 0 && (
-                <div className="h-full flex flex-col items-center justify-center text-gray-400 opacity-60">
-                    <div className="p-8 bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-sm mb-6 animate-float">
-                        <BrainCircuit size={80} className="text-primary-500" />
-                    </div>
-                    <p className="font-black text-xl text-gray-900 dark:text-white">أهلاً بك! أنا مستشارك المالي</p>
-                    <p className="text-sm mt-3 max-w-xs text-center leading-relaxed font-medium">سأقوم بتحليل مصاريفك ودخلك لتقديم أفضل النصائح لك.</p>
-                </div>
-            )}
-            
-            {messages.map(m => (
-                <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-[fadeIn_0.3s_ease-out]`}>
-                    <div className={`flex gap-3 max-w-[85%] ${m.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-md ${m.role === 'user' ? 'bg-gray-900 text-white' : 'bg-primary-600 text-white'}`}>
-                            {m.role === 'user' ? <User size={18} /> : <Bot size={20} />}
-                        </div>
-                        <div className={`p-5 rounded-3xl text-sm leading-relaxed shadow-sm ${
-                            m.role === 'user' 
-                            ? 'bg-primary-600 text-white rounded-tr-none' 
-                            : 'bg-white dark:bg-gray-700 dark:text-white border border-gray-100 dark:border-gray-600 rounded-tl-none'
-                        }`}>
-                            {m.text}
-                        </div>
-                    </div>
-                </div>
-            ))}
-            {isLoading && (
-              <div className="flex justify-start animate-pulse">
-                <div className="flex gap-3 max-w-[80%]">
-                    <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center text-white shrink-0 shadow-md">
-                        <Bot size={20} />
-                    </div>
-                    <div className="bg-white dark:bg-gray-700 p-5 rounded-3xl rounded-tl-none shadow-sm border border-gray-100 dark:border-gray-600 flex items-center gap-3">
-                        <Loader2 className="animate-spin text-primary-500" size={18} />
-                        <span className="text-xs font-bold text-gray-400">جاري التفكير...</span>
-                    </div>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-        </div>
+    <div className="flex flex-col h-full w-full bg-gray-50 dark:bg-[#0f172a] text-slate-900 dark:text-white overflow-hidden">
+      
+      <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar relative">
+          <button 
+            onClick={() => setMessages([])} 
+            disabled={isLoading || messages.length === 0}
+            className="absolute top-6 left-6 z-20 p-2.5 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-all bg-white/60 dark:bg-slate-900/60 backdrop-blur-md rounded-full disabled:opacity-50 disabled:cursor-not-allowed border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md"
+            title="بدء جلسة جديدة"
+          >
+            <RefreshCw size={18} />
+          </button>
 
-        <div className="p-6 bg-white dark:bg-gray-800 border-t dark:border-gray-700">
-            <div className="flex gap-3 max-w-4xl mx-auto">
-                <input 
-                  value={input} 
-                  onChange={e => setInput(e.target.value)} 
-                  onKeyDown={e => e.key === 'Enter' && sendMessage(input)} 
-                  className="flex-1 p-5 rounded-[1.5rem] bg-gray-100 dark:bg-gray-700 dark:text-white outline-none border border-transparent focus:border-primary-500 transition-all text-sm shadow-inner" 
-                  placeholder="اسأل المستشار عن وضعك المالي..." 
-                  disabled={isLoading}
-                />
-                <button 
-                  onClick={() => sendMessage(input)} 
-                  disabled={!input.trim() || isLoading}
-                  className="p-5 bg-primary-600 text-white rounded-[1.5rem] shadow-xl shadow-primary-500/20 hover:bg-primary-700 active:scale-95 disabled:opacity-50 transition-all"
-                >
-                  <Send size={24} />
-                </button>
-            </div>
-        </div>
+          {messages.length === 0 && (
+              <div className="h-full flex flex-col items-center justify-center text-center animate-fadeIn pt-8">
+                  <div className="relative mb-8 animate-float">
+                      <div className="absolute inset-0 bg-primary-500/10 dark:bg-primary-500/20 blur-3xl rounded-full"></div>
+                      <ShieldCheck size={80} className="text-primary-500 dark:text-primary-400 drop-shadow-lg stroke-1" />
+                  </div>
+                  <h2 className="text-3xl font-black text-slate-900 dark:text-white">أهلاً بكم سيدي</h2>
+                  <p className="text-base mt-3 max-w-sm text-slate-500 dark:text-slate-400 leading-relaxed font-medium">أنا هنا لتقديم استشارات مالية دقيقة ومخصصة لتمكينكم من تحقيق أهدافكم بثقة وقوة.</p>
+
+                  <div className="mt-12 w-full max-w-lg px-4">
+                      <p className="text-xs font-bold text-center text-slate-400 dark:text-slate-500 mb-4 uppercase tracking-widest">كيف يمكنني خدمتكم اليوم؟</p>
+                      <div className="grid grid-cols-1 gap-3">
+                          {suggestedPrompts.map((prompt, i) => {
+                              const Icon = prompt.icon;
+                              return (
+                                  <button 
+                                      key={i} 
+                                      onClick={() => sendMessage(prompt.text)}
+                                      className="group text-right p-4 bg-white border border-slate-200 dark:bg-slate-800 dark:border-slate-700 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-all text-sm font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white active:scale-95 flex items-center justify-between"
+                                  >
+                                      <span>{prompt.text}</span>
+                                      <Icon className="text-slate-400 group-hover:text-primary-500 dark:group-hover:text-primary-400 transition-colors" size={20}/>
+                                  </button>
+                              )
+                          })}
+                      </div>
+                  </div>
+              </div>
+          )}
+          
+          {messages.map(m => (
+              <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-[fadeIn_0.3s_ease-out]`}>
+                  <div className={`flex gap-3 max-w-[85%] ${m.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-lg ${m.role === 'user' ? 'bg-slate-700 text-white' : 'bg-gradient-to-br from-primary-500 to-primary-700 text-white'}`}>
+                          {m.role === 'user' ? <User size={18} /> : <Bot size={20} />}
+                      </div>
+                      <div className={`p-5 rounded-3xl text-sm shadow-md ${
+                          m.role === 'user' 
+                          ? 'bg-primary-600 text-white rounded-tr-none' 
+                          : 'bg-white text-slate-800 border border-gray-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 rounded-tl-none'
+                      }`}>
+                          {m.role === 'model' ? <ModelResponse text={m.text} /> : m.text}
+                          {isLoading && m.id === 'model-streaming' && m.text === '' && (
+                              <div className="flex items-center gap-2">
+                                  <div className="w-2 h-2 bg-primary-400 rounded-full animate-pulse"></div>
+                                  <div className="w-2 h-2 bg-primary-400 rounded-full animate-pulse [animation-delay:0.2s]"></div>
+                                  <div className="w-2 h-2 bg-primary-400 rounded-full animate-pulse [animation-delay:0.4s]"></div>
+                              </div>
+                          )}
+                      </div>
+                  </div>
+              </div>
+          ))}
+
+          <div ref={messagesEndRef} />
+      </div>
+
+      <div className="p-5 bg-white/80 dark:bg-[#0f172a]/80 backdrop-blur-md border-t border-gray-200 dark:border-slate-800 z-10">
+          <div className="flex gap-3 max-w-4xl mx-auto">
+              <input 
+                value={input} 
+                onChange={e => setInput(e.target.value)} 
+                onKeyDown={e => e.key === 'Enter' && sendMessage(input)} 
+                className="flex-1 px-5 py-4 rounded-[1.5rem] bg-gray-100 text-slate-900 border-2 border-gray-200 dark:bg-slate-800 dark:text-white dark:border-slate-700 focus:border-primary-500 outline-none transition-all text-sm shadow-inner placeholder:text-slate-500" 
+                placeholder="أرسل استفسارك..." 
+                disabled={isLoading}
+              />
+              <button 
+                onClick={() => sendMessage(input)} 
+                disabled={!input.trim() || isLoading}
+                className="p-4 bg-primary-600 text-white rounded-[1.5rem] shadow-lg shadow-primary-500/20 hover:bg-primary-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                <Send size={22} />
+              </button>
+          </div>
+      </div>
     </div>
   );
 };
-
-export default Advisor;

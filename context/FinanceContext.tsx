@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { AppSettings, BudgetConfig, Goal, Person, Transaction, Notification, DebtItem, Category, RecurringTransaction } from '../types';
-import { generateId, DEFAULT_CATEGORIES_DATA } from '../constants';
+import { generateId, DEFAULT_CATEGORIES_DATA, formatCurrency } from '../constants';
 import { addDays, addWeeks, addMonths, addYears, isSameDay, isAfter, parseISO } from 'date-fns';
 
 interface FinanceContextType {
@@ -99,7 +99,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [goals, setGoals] = useState<Goal[]>(() => safeLoad('goals', []));
   const [budget, setBudget] = useState<BudgetConfig>(() => loadBudgetWithMigration());
   const [settings, setSettings] = useState<AppSettings>(() => safeLoad('settings', defaultSettings));
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>(() => safeLoad('notifications', []));
   const [categories, setCategories] = useState<Category[]>(() => safeLoad('categories', DEFAULT_CATEGORIES_DATA));
   const [recurringTransactions, setRecurringTransactions] = useState<RecurringTransaction[]>(() => safeLoad('recurring', []));
 
@@ -137,8 +137,12 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const handler = setTimeout(() => { localStorage.setItem('recurring', JSON.stringify(recurringTransactions)); }, 500);
     return () => clearTimeout(handler);
   }, [recurringTransactions]);
+  
+  useEffect(() => {
+    localStorage.setItem('notifications', JSON.stringify(notifications));
+  }, [notifications]);
 
-
+  // Effect for processing recurring transactions
   useEffect(() => {
     const processRecurring = () => {
         const today = new Date();
@@ -195,20 +199,88 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return () => clearTimeout(timer);
   }, [recurringTransactions.length]); 
 
+  // Effect for Next Debt Payment Reminder Notifications
+  useEffect(() => {
+    if (!settings.notificationsEnabled) return;
+
+    const today = new Date();
+    const newNotifications: Notification[] = [];
+
+    people.forEach(person => {
+        person.debts.forEach(debt => {
+            // Check for debts that have had a payment but are not fully paid
+            if (debt.lastPaymentDate && debt.status !== 'paid') {
+                const reminderDate = addMonths(parseISO(debt.lastPaymentDate), 1);
+                const notificationId = `debt-payment-reminder-${person.id}-${debt.id}-${debt.lastPaymentDate}`;
+
+                // If a month has passed and this specific reminder hasn't been created yet
+                if (isAfter(today, reminderDate) && !notifications.some(n => n.id === notificationId)) {
+                    const remainingAmount = debt.amount - debt.paidAmount;
+                    newNotifications.push({
+                        id: notificationId,
+                        title: 'تذكير بسداد دفعة',
+                        message: `حان وقت سداد الدفعة التالية لـ "${person.name}". المبلغ المتبقي هو ${formatCurrency(remainingAmount, settings.currency)}.`,
+                        date: new Date().toISOString(),
+                        read: false,
+                        type: 'warning'
+                    });
+                }
+            }
+        });
+    });
+
+    if (newNotifications.length > 0) {
+        setNotifications(prev => [...newNotifications, ...prev]);
+    }
+
+  }, [people, notifications, settings.notificationsEnabled, settings.currency]);
+
   const addTransaction = useCallback((t: Omit<Transaction, 'id'>) => { setTransactions(prev => [{ ...t, id: generateId() }, ...prev]); }, []);
   const deleteTransaction = useCallback((id: string) => { setTransactions(prev => prev.filter(t => t.id !== id)); }, []);
   const addPerson = useCallback((p: Omit<Person, 'id' | 'debts'>) => { setPeople(prev => [{ ...p, id: generateId(), debts: [] }, ...prev]); }, []);
   const deletePerson = useCallback((id: string) => { setPeople(prev => prev.filter(p => p.id !== id)); }, []);
   
   const addDebtToPerson = useCallback((personId: string, debt: Omit<DebtItem, 'id' | 'paidAmount' | 'status'>) => {
-    setPeople(prev => prev.map(p => p.id === personId ? { ...p, debts: [...p.debts, { ...debt, id: generateId(), paidAmount: 0, status: 'unpaid' }] } : p));
+    setPeople(prev => prev.map(p => {
+        if (p.id !== personId) return p;
+        
+        const newDebt = { ...debt, id: generateId(), paidAmount: 0, status: 'unpaid' as const };
+
+        return {
+            ...p,
+            debts: [...p.debts, newDebt]
+        };
+    }));
   }, []);
 
   const updateDebt = useCallback((personId: string, debtId: string, updates: Partial<DebtItem>) => {
-    setPeople(prev => prev.map(p => p.id === personId ? {
-      ...p,
-      debts: p.debts.map(d => d.id === debtId ? { ...d, ...updates, status: (updates.paidAmount ?? d.paidAmount) >= (updates.amount ?? d.amount) ? 'paid' : (updates.paidAmount ?? d.paidAmount) > 0 ? 'partial' : 'unpaid' } : d)
-    } : p));
+    setPeople(prev => prev.map(p => {
+        if (p.id !== personId) return p;
+
+        const updatedDebts = p.debts.map(d => {
+            if (d.id !== debtId) return d;
+
+            const paymentMade = updates.paidAmount !== undefined && updates.paidAmount > d.paidAmount;
+            const newPaidAmount = updates.paidAmount ?? d.paidAmount;
+            const totalAmount = updates.amount ?? d.amount;
+            
+            const newStatus = newPaidAmount >= totalAmount ? 'paid' : newPaidAmount > 0 ? 'partial' : 'unpaid';
+
+            const updatedDebt: DebtItem = {
+                ...d,
+                ...updates,
+                status: newStatus,
+            };
+            
+            if (paymentMade && newStatus !== 'paid') {
+                updatedDebt.lastPaymentDate = new Date().toISOString();
+            }
+
+            return updatedDebt;
+        });
+        
+        return { ...p, debts: updatedDebts };
+    }));
   }, []);
 
   const addGoal = useCallback((g: Omit<Goal, 'id'>) => { setGoals(prev => [...prev, { ...g, id: generateId() }]); }, []);
@@ -304,6 +376,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setBudget(defaultBudget);
     setCategories(DEFAULT_CATEGORIES_DATA);
     setRecurringTransactions([]);
+    setNotifications([]);
   }, []);
 
   const contextValue = useMemo(() => ({
