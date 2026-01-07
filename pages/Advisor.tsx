@@ -1,4 +1,4 @@
-
+// FIX: Corrected React import to include useState, useEffect, and useRef, and removed leading empty lines which may have caused parsing issues.
 import React, { useState, useEffect, useRef } from 'react';
 import { useFinance } from '../context/FinanceContext';
 import { GoogleGenAI } from "@google/genai";
@@ -29,7 +29,7 @@ export default function Advisor(): React.ReactElement {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const API_KEY = process.env.API_KEY || "AIzaSyBsPsybFFviXStTBBbKJHGoKnUFJF0qL9s";
+  const API_KEY = process.env.API_KEY;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -37,6 +37,12 @@ export default function Advisor(): React.ReactElement {
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || isLoading) return;
+
+    if (!API_KEY || API_KEY === 'undefined') {
+        const errorMessage = "عذراً سيدي، مفتاح واجهة برمجة التطبيقات (API Key) غير مُعد بشكل صحيح. يرجى مراجعة إعدادات النشر.";
+        setMessages(prev => [...prev, { id: 'error', role: 'model', text: errorMessage }]);
+        return;
+    }
 
     const userMessage: Message = { id: Date.now().toString(), role: 'user', text };
     setMessages(prev => [...prev, userMessage, { id: 'model-streaming', role: 'model', text: '' }]);
@@ -94,18 +100,9 @@ export default function Advisor(): React.ReactElement {
   ];
 
   return (
-    <div className="flex flex-col h-full w-full bg-gray-50 dark:bg-[#0f172a] text-slate-900 dark:text-white overflow-hidden">
+    <div className="flex flex-col h-full w-full bg-gray-50 dark:bg-[#020617] text-slate-900 dark:text-white overflow-hidden">
       
       <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar relative">
-          <button 
-            onClick={() => setMessages([])} 
-            disabled={isLoading || messages.length === 0}
-            className="absolute top-6 left-6 z-20 p-2.5 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-all bg-white/60 dark:bg-slate-900/60 backdrop-blur-md rounded-full disabled:opacity-50 disabled:cursor-not-allowed border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md"
-            title="بدء جلسة جديدة"
-          >
-            <RefreshCw size={18} />
-          </button>
-
           {messages.length === 0 && (
               <div className="h-full flex flex-col items-center justify-center text-center animate-fadeIn pt-8">
                   <div className="relative mb-8 animate-float">
@@ -138,47 +135,50 @@ export default function Advisor(): React.ReactElement {
           
           {messages.map(m => (
               <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-[fadeIn_0.3s_ease-out]`}>
-                  <div className={`flex gap-3 max-w-[85%] ${m.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-lg ${m.role === 'user' ? 'bg-slate-700 text-white' : 'bg-gradient-to-br from-primary-500 to-primary-700 text-white'}`}>
-                          {m.role === 'user' ? <User size={18} /> : <Bot size={20} />}
+                  {m.role === 'user' ? (
+                      <div className="p-4 rounded-2xl text-sm shadow-md bg-emerald-500 text-white rounded-br-none max-w-[75%]">
+                          {m.text}
                       </div>
-                      <div className={`p-5 rounded-3xl text-sm shadow-md ${
-                          m.role === 'user' 
-                          ? 'bg-primary-600 text-white rounded-tr-none' 
-                          : 'bg-white text-slate-800 border border-gray-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 rounded-tl-none'
-                      }`}>
-                          {m.role === 'model' ? <ModelResponse text={m.text} /> : m.text}
-                          {isLoading && m.id === 'model-streaming' && m.text === '' && (
-                              <div className="flex items-center gap-2">
-                                  <div className="w-2 h-2 bg-primary-400 rounded-full animate-pulse"></div>
-                                  <div className="w-2 h-2 bg-primary-400 rounded-full animate-pulse [animation-delay:0.2s]"></div>
-                                  <div className="w-2 h-2 bg-primary-400 rounded-full animate-pulse [animation-delay:0.4s]"></div>
-                              </div>
-                          )}
+                  ) : (
+                      <div className="flex gap-3 max-w-[85%]">
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-lg bg-emerald-500 text-white">
+                              <Bot size={20} />
+                          </div>
+                          <div className="p-4 rounded-2xl text-sm shadow-md bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-bl-none">
+                              {m.id === 'model-streaming' && m.text === '' ? (
+                                  <div className="flex items-center gap-2">
+                                      <div className="w-2 h-2 bg-slate-400 rounded-full animate-pulse"></div>
+                                      <div className="w-2 h-2 bg-slate-400 rounded-full animate-pulse [animation-delay:0.2s]"></div>
+                                      <div className="w-2 h-2 bg-slate-400 rounded-full animate-pulse [animation-delay:0.4s]"></div>
+                                  </div>
+                              ) : (
+                                  <ModelResponse text={m.text} />
+                              )}
+                          </div>
                       </div>
-                  </div>
+                  )}
               </div>
           ))}
 
           <div ref={messagesEndRef} />
       </div>
 
-      <div className="p-5 bg-white/80 dark:bg-[#0f172a]/80 backdrop-blur-md border-t border-gray-200 dark:border-slate-800 z-10">
-          <div className="flex gap-3 max-w-4xl mx-auto">
+      <div className="p-4 bg-transparent border-t border-slate-200 dark:border-slate-800 z-10">
+          <div className="flex items-center gap-3 max-w-4xl mx-auto">
               <input 
                 value={input} 
                 onChange={e => setInput(e.target.value)} 
                 onKeyDown={e => e.key === 'Enter' && sendMessage(input)} 
-                className="flex-1 px-5 py-4 rounded-[1.5rem] bg-gray-100 text-slate-900 border-2 border-gray-200 dark:bg-slate-800 dark:text-white dark:border-slate-700 focus:border-primary-500 outline-none transition-all text-sm shadow-inner placeholder:text-slate-500" 
+                className="flex-1 px-5 py-3 rounded-full bg-slate-100 text-slate-900 border-2 border-transparent dark:bg-slate-700 dark:text-white focus:border-emerald-500 dark:focus:border-emerald-500 outline-none transition-all text-sm shadow-inner placeholder:text-slate-500" 
                 placeholder="أرسل استفسارك..." 
                 disabled={isLoading}
               />
               <button 
                 onClick={() => sendMessage(input)} 
                 disabled={!input.trim() || isLoading}
-                className="p-4 bg-primary-600 text-white rounded-[1.5rem] shadow-lg shadow-primary-500/20 hover:bg-primary-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="w-12 h-12 flex-shrink-0 bg-emerald-500 text-white rounded-full shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center"
               >
-                <Send size={22} />
+                <Send size={20} />
               </button>
           </div>
       </div>
