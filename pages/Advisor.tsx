@@ -1,3 +1,4 @@
+
 // FIX: Corrected React import to include useState, useEffect, and useRef, and removed leading empty lines which may have caused parsing issues.
 import React, { useState, useEffect, useRef } from 'react';
 import { useFinance } from '../context/FinanceContext';
@@ -86,7 +87,17 @@ export default function Advisor(): React.ReactElement {
         }
     } catch (error: any) {
         console.error("Advisor Error:", error);
-        let errorMessage = "عذراً سيدي، حدث خطأ تقني أثناء الاتصال. قد يكون مفتاح الخدمة غير صالح. أرجو المحاولة لاحقاً.";
+        let errorMessage: string;
+        const errorString = error.toString();
+
+        if (errorString.includes('PERMISSION_DENIED') || errorString.includes('403')) {
+            errorMessage = "عذراً سيدي، حدث خطأ في الصلاحيات.\n\n**يرجى التحقق من التالي:**\n- صلاحية مفتاح الـ API.\n- تفعيل `Generative Language API` في حساب Google Cloud.\n- ربط حساب فوترة صالح بالمشروع.";
+        } else if (errorString.includes('API key not valid')) {
+            errorMessage = "عذراً سيدي، مفتاح الـ API المستخدم غير صالح. يرجى التحقق منه في إعدادات النشر على Vercel.";
+        } else {
+            errorMessage = "عذراً سيدي، حدث خطأ تقني غير متوقع أثناء الاتصال. أرجو المحاولة لاحقاً.";
+        }
+        
         setMessages(prev => [...prev.slice(0, -1), { id: 'error', role: 'model', text: errorMessage }]);
     } finally {
         setIsLoading(false);
